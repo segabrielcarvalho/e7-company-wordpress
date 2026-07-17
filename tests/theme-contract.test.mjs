@@ -293,6 +293,18 @@ test('applies long-lived caching to GTranslate assets during the Dokploy sync', 
   assert.match(cacheRules, /ExpiresByType image\/svg\+xml/);
 });
 
+test('provisions the Ross Motorcycles multisite clone idempotently', async () => {
+  const compose = await readThemeFile('docker-compose.dokploy.yml');
+
+  assert.match(compose, /github\.com\/segabrielcarvalho\/ross-motorcycles-cork\.git/);
+  assert.match(compose, /ross-motorcycles\.e7company\.com/);
+  assert.match(compose, /wp site create/);
+  assert.match(compose, /wp theme enable ross-motorcycles-cork --network/);
+  assert.match(compose, /wp theme activate ross-motorcycles-cork/);
+  assert.match(compose, /wp ross catalogue import --prune/);
+  assert.match(compose, /condition: service_completed_successfully/);
+});
+
 test('serves right-sized industry images with explicit dimensions', async () => {
   const template = await readThemeFile('front-page.php');
 

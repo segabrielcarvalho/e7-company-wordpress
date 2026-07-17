@@ -60,13 +60,19 @@ services:
     command:
       - |
         themes=/wordpress/wp-content/themes
-        rm -rf /tmp/e7-company "$${themes}/e7-company.next" "$${themes}/e7-company.previous"
+        rm -rf /tmp/e7-company /tmp/ross-motorcycles-cork "$${themes}/e7-company.next" "$${themes}/e7-company.previous" "$${themes}/ross-motorcycles-cork.next" "$${themes}/ross-motorcycles-cork.previous"
         git clone --depth 1 --branch main https://github.com/segabrielcarvalho/e7-company-wordpress.git /tmp/e7-company
         cp -a /tmp/e7-company "$${themes}/e7-company.next"
         rm -rf "$${themes}/e7-company.next/.git" "$${themes}/e7-company.next/.github" "$${themes}/e7-company.next/node_modules"
         if [ -d "$${themes}/e7-company" ]; then mv "$${themes}/e7-company" "$${themes}/e7-company.previous"; fi
         mv "$${themes}/e7-company.next" "$${themes}/e7-company"
         rm -rf "$${themes}/e7-company.previous"
+        git clone --depth 1 --branch main https://github.com/segabrielcarvalho/ross-motorcycles-cork.git /tmp/ross-motorcycles-cork
+        cp -a /tmp/ross-motorcycles-cork "$${themes}/ross-motorcycles-cork.next"
+        rm -rf "$${themes}/ross-motorcycles-cork.next/.git" "$${themes}/ross-motorcycles-cork.next/node_modules"
+        if [ -d "$${themes}/ross-motorcycles-cork" ]; then mv "$${themes}/ross-motorcycles-cork" "$${themes}/ross-motorcycles-cork.previous"; fi
+        mv "$${themes}/ross-motorcycles-cork.next" "$${themes}/ross-motorcycles-cork"
+        rm -rf "$${themes}/ross-motorcycles-cork.previous"
         if [ -d /wordpress/wp-content/plugins/gtranslate ]; then
           cp "$${themes}/e7-company/deploy/gtranslate-cache.htaccess" /wordpress/wp-content/plugins/gtranslate/.htaccess
         fi
@@ -75,6 +81,41 @@ services:
     depends_on:
       wordpress:
         condition: service_healthy
+
+  ross_site_setup:
+    image: wordpress:cli-php8.3
+    user: "0:0"
+    restart: "no"
+    environment:
+      WORDPRESS_DB_HOST: wp_db:3306
+      WORDPRESS_DB_NAME: ${DB_NAME:?DB_NAME is required}
+      WORDPRESS_DB_USER: ${DB_USER:?DB_USER is required}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        site_url=https://ross-motorcycles.e7company.com
+        admin_email="$$(wp option get admin_email --url=https://e7company.com --allow-root)"
+        if ! wp site list --field=url --allow-root | grep -Fx "$${site_url}/" >/dev/null; then
+          wp site create --slug=ross-motorcycles --title="Ross Motorcycles Cork" --email="$${admin_email}" --allow-root
+        fi
+        wp theme enable ross-motorcycles-cork --network --allow-root
+        wp theme activate ross-motorcycles-cork --url="$${site_url}" --allow-root
+        wp option update home "$${site_url}" --url="$${site_url}" --allow-root
+        wp option update siteurl "$${site_url}" --url="$${site_url}" --allow-root
+        if ! wp option get ross_catalogue_last_imported_at --url="$${site_url}" --allow-root >/dev/null 2>&1; then
+          image_cache=/tmp/ross-catalogue-images
+          php /var/www/html/wp-content/themes/ross-motorcycles-cork/tools/download-source-images.php /var/www/html/wp-content/themes/ross-motorcycles-cork/data/source-catalogue.json "$${image_cache}" || true
+          wp ross catalogue import --prune --image-cache="$${image_cache}" --url="$${site_url}" --allow-root
+        fi
+        wp rewrite flush --url="$${site_url}" --allow-root
+    volumes:
+      - wp_app:/var/www/html
+    depends_on:
+      wp_db:
+        condition: service_healthy
+      theme_sync:
+        condition: service_completed_successfully
 
 volumes:
   wp_app:

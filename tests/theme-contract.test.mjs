@@ -281,6 +281,18 @@ test('removes network render blockers and applies long-lived caching to theme as
   assert.match(cacheRules, /ExpiresByType text\/javascript/);
 });
 
+test('applies long-lived caching to GTranslate assets during the Dokploy sync', async () => {
+  const compose = await readThemeFile('docker-compose.dokploy.yml');
+
+  assert.match(compose, /deploy\/gtranslate-cache\.htaccess/);
+  assert.match(compose, /wp-content\/plugins\/gtranslate\/\.htaccess/);
+
+  const cacheRules = await readThemeFile('deploy/gtranslate-cache.htaccess');
+  assert.match(cacheRules, /max-age=31536000/);
+  assert.match(cacheRules, /ExpiresByType application\/javascript/);
+  assert.match(cacheRules, /ExpiresByType image\/svg\+xml/);
+});
+
 test('serves right-sized industry images with explicit dimensions', async () => {
   const template = await readThemeFile('front-page.php');
 

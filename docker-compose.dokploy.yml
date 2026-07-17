@@ -67,6 +67,9 @@ services:
         if [ -d "$${themes}/e7-company" ]; then mv "$${themes}/e7-company" "$${themes}/e7-company.previous"; fi
         mv "$${themes}/e7-company.next" "$${themes}/e7-company"
         rm -rf "$${themes}/e7-company.previous"
+        if [ -d /wordpress/wp-content/plugins/gtranslate ]; then
+          cp "$${themes}/e7-company/deploy/gtranslate-cache.htaccess" /wordpress/wp-content/plugins/gtranslate/.htaccess
+        fi
     volumes:
       - wp_app:/wordpress
     depends_on:

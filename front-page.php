@@ -14,25 +14,25 @@ $services = [
 ];
 
 $industries = [
-    ['title' => 'Logistics', 'image' => 'orizonjpg-01.webp', 'copy' => 'Connected operations and real-time visibility.'],
-    ['title' => 'Government', 'image' => 'orizonjpg-02.webp', 'copy' => 'Reliable services designed for people.'],
-    ['title' => 'Healthcare', 'image' => 'orizonjpg-03.webp', 'copy' => 'Secure products for critical journeys.'],
+    ['title' => 'Logistics', 'image' => 'orizonjpg-01-480.webp', 'copy' => 'Connected operations and real-time visibility.'],
+    ['title' => 'Government', 'image' => 'orizonjpg-02-480.webp', 'copy' => 'Reliable services designed for people.'],
+    ['title' => 'Healthcare', 'image' => 'orizonjpg-03-480.webp', 'copy' => 'Secure products for critical journeys.'],
 ];
 
 $cases = [
-    ['title' => 'Workflow System Energy', 'image' => 'Porto-06.webp', 'tag' => 'Product design'],
-    ['title' => 'SaaS for End-to-End Analytics', 'image' => 'Porto-07.webp', 'tag' => 'Web platform'],
-    ['title' => 'Workload Management', 'image' => 'Porto-08.webp', 'tag' => 'Cloud systems'],
-    ['title' => 'Qpay E-wallet Mobile', 'image' => 'Porto-09.webp', 'tag' => 'Mobile app'],
-    ['title' => 'Fitness & Personal Trainers', 'image' => 'Porto-010.webp', 'tag' => 'Digital product'],
-    ['title' => 'Nutrition Coach & Nutritionist', 'image' => 'Porto-011.webp', 'tag' => 'Experience design'],
+    ['title' => 'Workflow System Energy', 'image' => 'Porto-06-400.webp', 'tag' => 'Product design'],
+    ['title' => 'SaaS for End-to-End Analytics', 'image' => 'Porto-07-400.webp', 'tag' => 'Web platform'],
+    ['title' => 'Workload Management', 'image' => 'Porto-08-400.webp', 'tag' => 'Cloud systems'],
+    ['title' => 'Qpay E-wallet Mobile', 'image' => 'Porto-09-400.webp', 'tag' => 'Mobile app'],
+    ['title' => 'Fitness & Personal Trainers', 'image' => 'Porto-010-400.webp', 'tag' => 'Digital product'],
+    ['title' => 'Nutrition Coach & Nutritionist', 'image' => 'Porto-011-400.webp', 'tag' => 'Experience design'],
 ];
 
 $testimonials = [
-    ['name' => 'Leslie Alexander', 'role' => 'CEO, Layers', 'image' => 'testimonial-img-01.webp', 'quote' => 'The team transformed a complex idea into a product that feels simple, fast and ready to scale.'],
-    ['name' => 'Kristin Watson', 'role' => 'Product Director', 'image' => 'testimonial-img-02.webp', 'quote' => 'Clear communication, strong design thinking and a real commitment to the result from day one.'],
-    ['name' => 'Robert Fox', 'role' => 'Founder, Circle', 'image' => 'testimonial-img-03.webp', 'quote' => 'They understood our business before writing code. That made every technical decision stronger.'],
-    ['name' => 'Jenny Wilson', 'role' => 'Operations Lead', 'image' => 'testimonial-img-04.webp', 'quote' => 'A reliable partner who brought clarity to the process and quality to every delivery.'],
+    ['name' => 'Leslie Alexander', 'role' => 'CEO, Layers', 'image' => 'testimonial-img-01-96.webp', 'quote' => 'The team transformed a complex idea into a product that feels simple, fast and ready to scale.'],
+    ['name' => 'Kristin Watson', 'role' => 'Product Director', 'image' => 'testimonial-img-02-96.webp', 'quote' => 'Clear communication, strong design thinking and a real commitment to the result from day one.'],
+    ['name' => 'Robert Fox', 'role' => 'Founder, Circle', 'image' => 'testimonial-img-03-96.webp', 'quote' => 'They understood our business before writing code. That made every technical decision stronger.'],
+    ['name' => 'Jenny Wilson', 'role' => 'Operations Lead', 'image' => 'testimonial-img-04-96.webp', 'quote' => 'A reliable partner who brought clarity to the process and quality to every delivery.'],
 ];
 
 $technology_logos = [
@@ -172,7 +172,7 @@ get_header();
                     for business
                 </h1>
                 <div class="mt-10 flex flex-col gap-6 sm:flex-row sm:items-center">
-                    <a class="button-primary px-8 py-4" href="#contact">Start your project</a>
+                    <a class="button-primary px-8 py-4" href="<?php echo esc_url(e7_company_whatsapp_url()); ?>" target="_blank" rel="noopener noreferrer">Start your project</a>
                     <p class="max-w-sm text-sm leading-7 text-white/50">Strategy, design and technology working together to transform ambitious ideas into useful digital products.</p>
                 </div>
                 <div class="mobile-hero-details mt-5 grid grid-cols-[1fr_auto] gap-3 sm:hidden" aria-label="E7 capabilities">
@@ -247,7 +247,7 @@ get_header();
                 <?php foreach ($industries as $industry) : ?>
                     <article class="group overflow-hidden rounded-3xl border border-white/10 bg-white/[0.06]" data-reveal>
                         <div class="h-56 overflow-hidden">
-                            <img class="h-full w-full object-cover grayscale transition duration-700 group-hover:scale-105 group-hover:grayscale-0" src="<?php echo esc_url(e7_company_asset('images/' . $industry['image'])); ?>" alt="" loading="lazy">
+                            <img class="h-full w-full object-cover grayscale transition duration-700 group-hover:scale-105 group-hover:grayscale-0" src="<?php echo esc_url(e7_company_asset('images/' . $industry['image'])); ?>" alt="" width="480" height="232" loading="lazy">
                         </div>
                         <div class="flex items-start justify-between gap-6 p-7">
                             <div><h3 class="font-display text-2xl font-bold"><?php echo esc_html($industry['title']); ?></h3><p class="mt-3 text-sm leading-6 text-white/60"><?php echo esc_html($industry['copy']); ?></p></div>
@@ -265,10 +265,10 @@ get_header();
                 <p class="eyebrow">Why choose us?</p>
                 <h2 class="section-title">A product partner focused on meaningful outcomes.</h2>
                 <p class="mt-7 max-w-xl text-base leading-8 text-neutral-500">Our multidisciplinary team works as an extension of yours, combining clear processes, senior expertise and honest collaboration.</p>
-                <a class="button-secondary mt-9" href="#contact">Meet E7 Company</a>
+                <a class="button-secondary mt-9" href="<?php echo esc_url(e7_company_whatsapp_url()); ?>" target="_blank" rel="noopener noreferrer">Meet E7 Company</a>
             </div>
             <div class="grid gap-5 sm:grid-cols-[1fr_1.1fr]" data-reveal>
-                <img class="h-full min-h-80 w-full rounded-3xl object-cover" src="<?php echo esc_url(e7_company_asset('images/orizonjpg-010.webp')); ?>" alt="Team collaborating around a table" loading="lazy">
+                <img class="h-full min-h-80 w-full rounded-3xl object-cover" src="<?php echo esc_url(e7_company_asset('images/orizonjpg-010-400.webp')); ?>" srcset="<?php echo esc_url(e7_company_asset('images/orizonjpg-010-320.webp')); ?> 320w, <?php echo esc_url(e7_company_asset('images/orizonjpg-010-400.webp')); ?> 400w" sizes="(min-width: 1024px) 300px, 100vw" alt="Team collaborating around a table" width="400" height="570" loading="lazy">
                 <div class="grid grid-cols-2 rounded-3xl bg-neutral-50 p-2">
                     <?php foreach ([['04', 'Delivery stages'], ['23+', 'Specialists'], ['150+', 'Projects delivered'], ['2540+', 'Ideas explored']] as $stat) : ?>
                         <div class="border border-white p-5 sm:p-7">
@@ -285,13 +285,13 @@ get_header();
         <div class="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-12">
             <div class="mb-14 flex flex-col gap-7 sm:flex-row sm:items-end sm:justify-between" data-reveal>
                 <div><p class="eyebrow">Selected work</p><h2 class="section-title">Case studies</h2></div>
-                <a class="button-secondary" href="#contact">View all projects</a>
+                <a class="button-secondary" href="<?php echo esc_url(e7_company_whatsapp_url()); ?>" target="_blank" rel="noopener noreferrer">View all projects</a>
             </div>
             <div class="grid gap-x-6 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
                 <?php foreach ($cases as $case) : ?>
                     <article class="group" data-reveal>
                         <div class="aspect-[1.5] overflow-hidden rounded-3xl bg-neutral-200">
-                            <img class="h-full w-full object-cover transition duration-700 group-hover:scale-105" src="<?php echo esc_url(e7_company_asset('images/' . $case['image'])); ?>" alt="" loading="lazy">
+                            <img class="h-full w-full object-cover transition duration-700 group-hover:scale-105" src="<?php echo esc_url(e7_company_asset('images/' . $case['image'])); ?>" alt="" width="400" height="266" loading="lazy">
                         </div>
                         <div class="mt-5 flex items-start justify-between gap-5">
                             <div><p class="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-600"><?php echo esc_html($case['tag']); ?></p><h3 class="mt-2 font-display text-2xl font-bold leading-tight tracking-tight"><?php echo esc_html($case['title']); ?></h3></div>
@@ -312,7 +312,7 @@ get_header();
                 <p class="eyebrow !text-brand-400">Built for what comes next</p>
                 <h2 class="max-w-4xl font-display text-5xl font-bold leading-[.95] tracking-[-0.055em] sm:text-7xl lg:text-8xl">A technical partner for your next big move.</h2>
                 <p class="mt-8 max-w-2xl text-base leading-8 text-white/60 sm:text-lg">From the first decision to continuous evolution, we bring product thinking and engineering discipline together to build digital solutions that last.</p>
-                <a class="button-primary mt-10" href="#contact">Start a conversation</a>
+                <a class="button-primary mt-10" href="<?php echo esc_url(e7_company_whatsapp_url()); ?>" target="_blank" rel="noopener noreferrer">Start a conversation</a>
             </div>
 
             <div class="grid gap-3" data-reveal>
@@ -396,7 +396,7 @@ get_header();
             <div class="grid gap-10 border-b border-white/10 pb-12 lg:grid-cols-[1fr_1fr] lg:items-start lg:gap-24" data-reveal>
                 <div>
                     <h2 class="font-display text-4xl font-bold uppercase leading-none tracking-[-0.045em] sm:text-6xl">Our approach</h2>
-                    <a class="button-primary mt-6 px-7" href="#contact">Work with us</a>
+                    <a class="button-primary mt-6 px-7" href="<?php echo esc_url(e7_company_whatsapp_url()); ?>" target="_blank" rel="noopener noreferrer">Work with us</a>
                 </div>
                 <p class="max-w-xl text-sm leading-7 text-white/55 lg:justify-self-end lg:pt-1">From the first strategic conversation to continuous product evolution, our process creates clarity, reduces risk and connects every decision to a meaningful business outcome.</p>
             </div>
@@ -471,7 +471,7 @@ get_header();
                         <div class="mb-8 text-sm tracking-[0.2em] text-brand-500">★★★★★</div>
                         <blockquote class="font-display text-xl font-semibold leading-8 tracking-tight">“<?php echo esc_html($testimonial['quote']); ?>”</blockquote>
                         <div class="mt-8 flex items-center gap-4">
-                            <img class="h-12 w-12 rounded-full object-cover" src="<?php echo esc_url(e7_company_asset('images/' . $testimonial['image'])); ?>" alt="" loading="lazy">
+                            <img class="h-12 w-12 rounded-full object-cover" src="<?php echo esc_url(e7_company_asset('images/' . $testimonial['image'])); ?>" alt="" width="96" height="96" loading="lazy">
                             <div><p class="text-sm font-bold"><?php echo esc_html($testimonial['name']); ?></p><p class="mt-1 text-xs text-neutral-500"><?php echo esc_html($testimonial['role']); ?></p></div>
                         </div>
                     </article>
@@ -493,8 +493,8 @@ get_header();
                     <form class="grid gap-5 sm:grid-cols-2" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" data-reveal>
                         <input type="hidden" name="action" value="e7_company_contact">
                         <?php wp_nonce_field('e7_company_contact'); ?>
-                        <label class="grid gap-2 text-xs font-bold uppercase tracking-[0.16em] text-white/50">Your name<input class="border-0 border-b border-white/20 bg-transparent px-0 py-3 text-base font-normal normal-case tracking-normal text-white outline-none transition placeholder:text-white/20 focus:border-brand-400 focus:ring-0" type="text" name="name" placeholder="John Smith" required></label>
-                        <label class="grid gap-2 text-xs font-bold uppercase tracking-[0.16em] text-white/50">Email address<input class="border-0 border-b border-white/20 bg-transparent px-0 py-3 text-base font-normal normal-case tracking-normal text-white outline-none transition placeholder:text-white/20 focus:border-brand-400 focus:ring-0" type="email" name="email" placeholder="john@company.com" required></label>
+                        <label class="grid gap-2 text-xs font-bold uppercase tracking-[0.16em] text-white/50">Your name<input class="border-0 border-b border-white/20 bg-transparent px-0 py-3 text-base font-normal normal-case tracking-normal text-white outline-none transition placeholder:text-white/20 focus:border-brand-400 focus:ring-0" type="text" name="name" autocomplete="name" placeholder="John Smith" required></label>
+                        <label class="grid gap-2 text-xs font-bold uppercase tracking-[0.16em] text-white/50">Email address<input class="border-0 border-b border-white/20 bg-transparent px-0 py-3 text-base font-normal normal-case tracking-normal text-white outline-none transition placeholder:text-white/20 focus:border-brand-400 focus:ring-0" type="email" name="email" autocomplete="email" placeholder="john@company.com" required></label>
                         <label class="grid gap-2 text-xs font-bold uppercase tracking-[0.16em] text-white/50 sm:col-span-2">What can we build together?<textarea class="min-h-28 resize-y border-0 border-b border-white/20 bg-transparent px-0 py-3 text-base font-normal normal-case tracking-normal text-white outline-none transition placeholder:text-white/20 focus:border-brand-400 focus:ring-0" name="message" placeholder="Tell us a little about the project" required></textarea></label>
                         <div class="sm:col-span-2"><button class="button-primary mt-3 px-8 py-4" type="submit">Send project details</button></div>
                     </form>

@@ -33,19 +33,25 @@ function e7_company_assets(): void
 {
     $stylesheet_path = get_template_directory() . '/assets/css/app.css';
     $script_path = get_template_directory() . '/assets/js/app.js';
+    $stylesheet = file_get_contents($stylesheet_path);
 
-    wp_enqueue_style(
-        'e7-company',
-        get_template_directory_uri() . '/assets/css/app.css',
-        [],
-        (string) filemtime($stylesheet_path)
-    );
+    wp_register_style('e7-company', false, [], (string) filemtime($stylesheet_path));
+    wp_enqueue_style('e7-company');
+
+    if (false !== $stylesheet) {
+        $stylesheet = str_replace('../fonts/', e7_company_asset('fonts/'), $stylesheet);
+        wp_add_inline_style('e7-company', $stylesheet);
+    }
+
     wp_enqueue_script(
         'e7-company',
         get_template_directory_uri() . '/assets/js/app.js',
         [],
         (string) filemtime($script_path),
-        true
+        [
+            'strategy'  => 'defer',
+            'in_footer' => true,
+        ]
     );
 }
 add_action('wp_enqueue_scripts', 'e7_company_assets');
@@ -143,6 +149,15 @@ function e7_company_language_switcher(): void
     echo '</div>';
 }
 
+function e7_company_whatsapp_url(string $message = ''): string
+{
+    $message = '' !== trim($message)
+        ? $message
+        : 'Hello! I came from the E7 Company website and would like to discuss a project.';
+
+    return add_query_arg('text', $message, 'https://wa.me/5562995506531');
+}
+
 function e7_company_handle_contact(): void
 {
     check_admin_referer('e7_company_contact');
@@ -156,12 +171,14 @@ function e7_company_handle_contact(): void
         exit;
     }
 
-    $subject = sprintf(__('New project inquiry from %s', 'e7-company'), $name);
-    $body = sprintf("Name: %s\nEmail: %s\n\nProject details:\n%s", $name, $email, $message);
-    $headers = ['Reply-To: ' . $name . ' <' . $email . '>'];
-    $sent = wp_mail(get_option('admin_email'), $subject, $body, $headers);
+    $body = sprintf(
+        'Hello! I came from the E7 Company website. Name: %s. Email: %s. Project details: %s',
+        $name,
+        $email,
+        $message
+    );
 
-    wp_safe_redirect(add_query_arg('contact', $sent ? 'sent' : 'error', home_url('/')) . '#contact');
+    wp_redirect(e7_company_whatsapp_url($body), 303, 'E7 Company');
     exit;
 }
 add_action('admin_post_e7_company_contact', 'e7_company_handle_contact');

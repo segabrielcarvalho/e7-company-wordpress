@@ -142,8 +142,8 @@ test('uses the supplied E7 brand and exposes favicon assets', async () => {
   const footer = await readThemeFile('footer.php');
   const functions = await readThemeFile('functions.php');
 
-  assert.match(header, /brand\/e7-company-logo-transparent\.webp/);
-  assert.match(footer, /brand\/e7-company-logo-transparent\.webp/);
+  assert.match(header, /brand\/e7-company-logo-transparent-256\.webp/);
+  assert.match(footer, /brand\/e7-company-logo-transparent-256\.webp/);
   assert.match(functions, /brand\/favicon\.ico/);
   assert.match(functions, /brand\/e7-icon-512\.png/);
   assert.match(functions, /brand\/apple-touch-icon\.png/);
@@ -224,8 +224,10 @@ test('uses a right-sized WebP brand logo in the header and footer', async () => 
   const header = await readThemeFile('header.php');
   const footer = await readThemeFile('footer.php');
 
-  assert.match(header, /e7-company-logo-transparent\.webp/);
-  assert.match(footer, /e7-company-logo-transparent\.webp/);
+  await readThemeFile('assets/brand/e7-company-logo-transparent-256.webp');
+  assert.match(header, /e7-company-logo-transparent-256\.webp/);
+  assert.match(footer, /e7-company-logo-transparent-256\.webp/);
+  assert.match(header + footer, /width="256" height="119"/);
   assert.doesNotMatch(header + footer, /e7-company-logo-transparent\.png/);
 });
 
@@ -239,17 +241,78 @@ test('keeps approach tabs and panels accessible to people and agents', async () 
   assert.match(stylesheet, /\.approach-tab span\s*\{[\s\S]*?#60a5fa/);
 });
 
-test('contact form uses a secure WordPress handler instead of mailto', async () => {
+test('all project contact entry points open the owner WhatsApp', async () => {
   const template = await readThemeFile('front-page.php');
+  const header = await readThemeFile('header.php');
   const footer = await readThemeFile('footer.php');
   const functions = await readThemeFile('functions.php');
 
-  assert.doesNotMatch(template + footer, /mailto:/);
+  assert.match(functions, /function e7_company_whatsapp_url/);
+  assert.match(functions, /5562995506531/);
+  assert.match(functions, /https:\/\/wa\.me\//);
+  assert.doesNotMatch(template + header + footer, /href=["']#contact["']/);
+  assert.match(template + header + footer, /e7_company_whatsapp_url\(/);
+});
+
+test('contact form validates the fields and redirects with a prefilled WhatsApp message', async () => {
+  const template = await readThemeFile('front-page.php');
+  const functions = await readThemeFile('functions.php');
+
   assert.match(template, /admin-post\.php/);
   assert.match(template, /wp_nonce_field\('e7_company_contact'/);
+  assert.match(template, /name="name"[^>]+autocomplete="name"/);
+  assert.match(template, /name="email"[^>]+autocomplete="email"/);
   assert.match(functions, /admin_post_nopriv_e7_company_contact/);
   assert.match(functions, /check_admin_referer\('e7_company_contact'/);
-  assert.match(functions, /wp_mail\(/);
+  assert.match(functions, /Project details:/);
+  assert.match(functions, /website\. Name:/);
+  assert.match(functions, /e7_company_whatsapp_url\(\$body\)/);
+  assert.doesNotMatch(functions, /wp_mail\(/);
+});
+
+test('removes network render blockers and applies long-lived caching to theme assets', async () => {
+  const functions = await readThemeFile('functions.php');
+  const cacheRules = await readThemeFile('.htaccess');
+
+  assert.match(functions, /wp_add_inline_style\('e7-company'/);
+  assert.match(functions, /'strategy'\s*=>\s*'defer'/);
+  assert.match(cacheRules, /max-age=31536000/);
+  assert.match(cacheRules, /ExpiresActive On/);
+  assert.match(cacheRules, /ExpiresByType text\/javascript/);
+});
+
+test('serves right-sized industry images with explicit dimensions', async () => {
+  const template = await readThemeFile('front-page.php');
+
+  for (const image of ['orizonjpg-01-480.webp', 'orizonjpg-02-480.webp', 'orizonjpg-03-480.webp']) {
+    await readThemeFile(`assets/images/${image}`);
+    assert.match(template, new RegExp(image.replace('.', '\\.') ));
+  }
+
+  assert.match(template, /width="480" height="232" loading="lazy"/);
+});
+
+test('serves right-sized collaboration, case study and testimonial images', async () => {
+  const template = await readThemeFile('front-page.php');
+
+  await readThemeFile('assets/images/orizonjpg-010-400.webp');
+  await readThemeFile('assets/images/orizonjpg-010-320.webp');
+  assert.match(template, /orizonjpg-010-400\.webp/);
+  assert.match(template, /orizonjpg-010-320\.webp/);
+  assert.match(template, /srcset=/);
+  assert.match(template, /width="400" height="570"/);
+
+  for (const image of ['Porto-06', 'Porto-07', 'Porto-08', 'Porto-09', 'Porto-010', 'Porto-011']) {
+    await readThemeFile(`assets/images/${image}-400.webp`);
+    assert.match(template, new RegExp(`${image}-400\\.webp`));
+  }
+  assert.match(template, /width="400" height="266" loading="lazy"/);
+
+  for (const image of ['testimonial-img-01', 'testimonial-img-02', 'testimonial-img-03', 'testimonial-img-04']) {
+    await readThemeFile(`assets/images/${image}-96.webp`);
+    assert.match(template, new RegExp(`${image}-96\\.webp`));
+  }
+  assert.match(template, /width="96" height="96" loading="lazy"/);
 });
 
 test('renders a static hero canvas on touch devices and limits desktop animation work', async () => {
@@ -258,6 +321,14 @@ test('renders a static hero canvas on touch devices and limits desktop animation
   assert.match(script, /hover:\s*hover/);
   assert.match(script, /frameInterval\s*=\s*1000\s*\/\s*30/);
   assert.match(script, /interactiveDots/);
+});
+
+test('avoids redundant header layout invalidation while the page remains at the top', async () => {
+  const script = await readThemeFile('assets/js/app.js');
+
+  assert.match(script, /let headerScrolled = siteHeader\?\.classList\.contains\('is-scrolled'\)/);
+  assert.match(script, /if \(shouldBeScrolled === headerScrolled\) return;/);
+  assert.match(script, /requestAnimationFrame\(updateHeader\)/);
 });
 
 test('delegates HTTPS redirects to the reverse proxy', async () => {

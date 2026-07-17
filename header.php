@@ -19,7 +19,7 @@
 <header class="site-header fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-neutral-950/75 backdrop-blur-xl transition-all duration-300" data-site-header>
     <div class="mx-auto flex h-20 max-w-[1440px] items-center justify-between px-5 sm:px-8 lg:px-12">
         <a href="<?php echo esc_url(home_url('/')); ?>" class="flex items-center" aria-label="E7 Company home">
-            <img class="-my-2 h-24 w-auto object-contain" src="<?php echo esc_url(e7_company_asset('brand/e7-company-logo-transparent.webp')); ?>" alt="E7 Company" width="512" height="238" fetchpriority="high">
+            <img class="-my-2 h-24 w-auto object-contain" src="<?php echo esc_url(e7_company_asset('brand/e7-company-logo-transparent-256.webp')); ?>" alt="E7 Company" width="256" height="119" fetchpriority="high">
         </a>
 
         <nav class="hidden items-center gap-8 lg:flex" aria-label="Primary navigation">
@@ -32,7 +32,7 @@
         <div class="hidden items-center gap-4 lg:flex">
             <?php e7_company_language_switcher(); ?>
             <span class="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">Let’s build</span>
-            <a class="button-primary" href="#contact">Start a project</a>
+            <a class="button-primary" href="<?php echo esc_url(e7_company_whatsapp_url()); ?>" target="_blank" rel="noopener noreferrer">Start a project</a>
         </div>
 
         <button class="grid h-11 w-11 place-items-center rounded-full border border-white/20 text-white lg:hidden" type="button" aria-expanded="false" aria-controls="mobile-navigation" data-menu-toggle>
@@ -50,7 +50,7 @@
             <a class="mobile-nav-link" href="#why-e7">About</a>
             <a class="mobile-nav-link" href="#case-studies">Case studies</a>
             <?php e7_company_language_switcher(); ?>
-            <a class="mobile-nav-link text-brand-400" href="#contact">Start a project</a>
+            <a class="mobile-nav-link text-brand-400" href="<?php echo esc_url(e7_company_whatsapp_url()); ?>" target="_blank" rel="noopener noreferrer">Start a project</a>
         </div>
     </nav>
 </header>

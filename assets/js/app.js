@@ -17,13 +17,25 @@ if (menuToggle && mobileMenu) {
   });
 }
 
+let headerScrolled = siteHeader?.classList.contains('is-scrolled') ?? false;
+let headerUpdateFrame = 0;
+
 const updateHeader = () => {
+  headerUpdateFrame = 0;
   if (!siteHeader) return;
-  siteHeader.classList.toggle('is-scrolled', window.scrollY > 24);
+  const shouldBeScrolled = window.scrollY > 24;
+  if (shouldBeScrolled === headerScrolled) return;
+  headerScrolled = shouldBeScrolled;
+  siteHeader.classList.toggle('is-scrolled', shouldBeScrolled);
+};
+
+const scheduleHeaderUpdate = () => {
+  if (headerUpdateFrame) return;
+  headerUpdateFrame = window.requestAnimationFrame(updateHeader);
 };
 
 updateHeader();
-window.addEventListener('scroll', updateHeader, { passive: true });
+window.addEventListener('scroll', scheduleHeaderUpdate, { passive: true });
 
 const canvas = document.querySelector('[data-hero-dot-canvas]');
 const dotContainer = canvas?.parentElement;

@@ -9,7 +9,7 @@
     <div class="mx-auto grid max-w-[1440px] gap-12 px-5 py-14 sm:px-8 lg:grid-cols-[1.2fr_2fr] lg:px-12 lg:py-20">
         <div>
             <a href="<?php echo esc_url(home_url('/')); ?>" class="inline-flex items-center" aria-label="E7 Company home">
-                <img class="-my-7 h-28 w-auto object-contain" src="<?php echo esc_url(e7_company_asset('brand/e7-company-logo-transparent.webp')); ?>" alt="E7 Company" width="512" height="238" loading="lazy">
+                <img class="-my-7 h-28 w-auto object-contain" src="<?php echo esc_url(e7_company_asset('brand/e7-company-logo-transparent-256.webp')); ?>" alt="E7 Company" width="256" height="119" loading="lazy">
             </a>
             <p class="mt-6 max-w-sm text-sm leading-7 text-white/55">Customized software solutions built to move ambitious businesses forward.</p>
         </div>
@@ -28,8 +28,8 @@
             </div>
             <div>
                 <p class="footer-title">Connect</p>
-                <a class="footer-link" href="#contact">Contact us</a>
-                <a class="footer-link" href="#contact">hello@e7.company</a>
+                <a class="footer-link" href="<?php echo esc_url(e7_company_whatsapp_url()); ?>" target="_blank" rel="noopener noreferrer">Contact us</a>
+                <a class="footer-link" href="<?php echo esc_url(e7_company_whatsapp_url()); ?>" target="_blank" rel="noopener noreferrer">WhatsApp +55 62 99550-6531</a>
                 <span class="footer-link">Brazil · Worldwide</span>
             </div>
         </div>

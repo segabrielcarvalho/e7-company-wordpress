@@ -68,6 +68,16 @@ test('home includes an accessible partner strip and search description', async (
   assert.match(functions, /add_action\('wp_head'/);
 });
 
+test('shows the real client companies in testimonial cards', async () => {
+  const template = await readThemeFile('front-page.php');
+
+  for (const company of ['VoteMe', 'FIA', 'Assessoria Alpha', 'Asaas']) {
+    assert.match(template, new RegExp(`'company'\\s*=>\\s*'${company}'`));
+  }
+
+  assert.doesNotMatch(template, /CEO, Layers|Founder, Circle/);
+});
+
 test('desktop hero centers its content without the dashboard visual', async () => {
   const template = await readThemeFile('front-page.php');
 

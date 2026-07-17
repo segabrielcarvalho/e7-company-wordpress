@@ -29,10 +29,10 @@ $cases = [
 ];
 
 $testimonials = [
-    ['name' => 'Leslie Alexander', 'role' => 'CEO, Layers', 'image' => 'testimonial-img-01-96.webp', 'quote' => 'The team transformed a complex idea into a product that feels simple, fast and ready to scale.'],
-    ['name' => 'Kristin Watson', 'role' => 'Product Director', 'image' => 'testimonial-img-02-96.webp', 'quote' => 'Clear communication, strong design thinking and a real commitment to the result from day one.'],
-    ['name' => 'Robert Fox', 'role' => 'Founder, Circle', 'image' => 'testimonial-img-03-96.webp', 'quote' => 'They understood our business before writing code. That made every technical decision stronger.'],
-    ['name' => 'Jenny Wilson', 'role' => 'Operations Lead', 'image' => 'testimonial-img-04-96.webp', 'quote' => 'A reliable partner who brought clarity to the process and quality to every delivery.'],
+    ['name' => 'Leslie Alexander', 'company' => 'VoteMe', 'image' => 'testimonial-img-01-96.webp', 'quote' => 'The team transformed a complex idea into a product that feels simple, fast and ready to scale.'],
+    ['name' => 'Kristin Watson', 'company' => 'FIA', 'image' => 'testimonial-img-02-96.webp', 'quote' => 'Clear communication, strong design thinking and a real commitment to the result from day one.'],
+    ['name' => 'Robert Fox', 'company' => 'Assessoria Alpha', 'image' => 'testimonial-img-03-96.webp', 'quote' => 'They understood our business before writing code. That made every technical decision stronger.'],
+    ['name' => 'Jenny Wilson', 'company' => 'Asaas', 'image' => 'testimonial-img-04-96.webp', 'quote' => 'A reliable partner who brought clarity to the process and quality to every delivery.'],
 ];
 
 $technology_logos = [
@@ -472,7 +472,7 @@ get_header();
                         <blockquote class="font-display text-xl font-semibold leading-8 tracking-tight">“<?php echo esc_html($testimonial['quote']); ?>”</blockquote>
                         <div class="mt-8 flex items-center gap-4">
                             <img class="h-12 w-12 rounded-full object-cover" src="<?php echo esc_url(e7_company_asset('images/' . $testimonial['image'])); ?>" alt="" width="96" height="96" loading="lazy">
-                            <div><p class="text-sm font-bold"><?php echo esc_html($testimonial['name']); ?></p><p class="mt-1 text-xs text-neutral-500"><?php echo esc_html($testimonial['role']); ?></p></div>
+                            <div><p class="text-sm font-bold"><?php echo esc_html($testimonial['name']); ?></p><p class="mt-1 text-xs text-neutral-500"><?php echo esc_html($testimonial['company']); ?></p></div>
                         </div>
                     </article>
                 <?php endforeach; ?>

@@ -47,7 +47,7 @@ services:
       wp_db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "php -r 'exit(@file_get_contents(\"http://127.0.0.1/wp-login.php\") === false ? 1 : 0);'"]
+      test: ["CMD-SHELL", "php -r '$$socket = @fsockopen(\"127.0.0.1\", 80); exit($$socket ? 0 : 1);'"]
       interval: 10s
       timeout: 5s
       retries: 18

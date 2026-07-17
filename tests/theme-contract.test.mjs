@@ -311,6 +311,7 @@ test('applies long-lived caching to GTranslate assets during the Dokploy sync', 
 test('provisions the Ross Motorcycles multisite clone idempotently', async () => {
   const compose = await readThemeFile('docker-compose.dokploy.yml');
 
+  assert.equal((compose.match(/WORDPRESS_CONFIG_EXTRA/g) ?? []).length, 2);
   assert.match(compose, /github\.com\/segabrielcarvalho\/ross-motorcycles-cork\.git/);
   assert.match(compose, /ross-motorcycles\.e7company\.com/);
   assert.match(compose, /wp site create/);

@@ -1,0 +1,78 @@
+services:
+  wp_db:
+    image: mysql:8.4.6
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}
+      MYSQL_DATABASE: ${DB_NAME:?DB_NAME is required}
+      MYSQL_USER: ${DB_USER:?DB_USER is required}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    volumes:
+      - wp_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  wordpress:
+    image: wordpress:7.0.1-php8.3-apache
+    restart: unless-stopped
+    environment:
+      WORDPRESS_DB_HOST: wp_db:3306
+      WORDPRESS_DB_NAME: ${DB_NAME:?DB_NAME is required}
+      WORDPRESS_DB_USER: ${DB_USER:?DB_USER is required}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      WORDPRESS_DEBUG: ${WORDPRESS_DEBUG:-0}
+      WORDPRESS_CONFIG_EXTRA: |
+        if (isset($$_SERVER['HTTP_X_FORWARDED_PROTO']) && strpos($$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false) {
+            $$_SERVER['HTTPS'] = 'on';
+        }
+        define('WP_ENVIRONMENT_TYPE', 'production');
+        define('WP_MEMORY_LIMIT', '256M');
+        define('DISALLOW_FILE_EDIT', true);
+        define('WP_AUTO_UPDATE_CORE', false);
+        define('MULTISITE', true);
+        define('SUBDOMAIN_INSTALL', true);
+        define('DOMAIN_CURRENT_SITE', 'e7company.com');
+        define('PATH_CURRENT_SITE', '/');
+        define('SITE_ID_CURRENT_SITE', 1);
+        define('BLOG_ID_CURRENT_SITE', 1);
+        define('COOKIE_DOMAIN', false);
+    volumes:
+      - wp_app:/var/www/html
+      - ../files/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
+    depends_on:
+      wp_db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "php -r 'exit(@file_get_contents(\"http://127.0.0.1/wp-login.php\") === false ? 1 : 0);'"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
+
+  theme_sync:
+    image: alpine/git:2.49.1
+    restart: "no"
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        themes=/wordpress/wp-content/themes
+        rm -rf /tmp/e7-company "$${themes}/e7-company.next" "$${themes}/e7-company.previous"
+        git clone --depth 1 --branch main https://github.com/segabrielcarvalho/e7-company-wordpress.git /tmp/e7-company
+        cp -a /tmp/e7-company "$${themes}/e7-company.next"
+        rm -rf "$${themes}/e7-company.next/.git" "$${themes}/e7-company.next/.github" "$${themes}/e7-company.next/node_modules"
+        if [ -d "$${themes}/e7-company" ]; then mv "$${themes}/e7-company" "$${themes}/e7-company.previous"; fi
+        mv "$${themes}/e7-company.next" "$${themes}/e7-company"
+        rm -rf "$${themes}/e7-company.previous"
+    volumes:
+      - wp_app:/wordpress
+    depends_on:
+      wordpress:
+        condition: service_healthy
+
+volumes:
+  wp_app:
+  wp_data:

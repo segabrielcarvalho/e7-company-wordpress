@@ -1,0 +1,68 @@
+name: Validar e publicar no Dokploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e7-company-production
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Testes e build do tema
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Preparar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Executar testes
+        run: pnpm test
+
+      - name: Compilar Tailwind
+        run: pnpm build
+
+      - name: Confirmar artefatos versionados
+        run: git diff --exit-code -- assets/css/app.css
+
+  deploy:
+    name: Atualizar produção
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Acionar o Compose no Dokploy
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_KEY: ${{ secrets.DOKPLOY_KEY }}
+          DOKPLOY_COMPOSE_ID: ${{ secrets.DOKPLOY_COMPOSE_ID }}
+        run: |
+          test -n "$DOKPLOY_URL"
+          test -n "$DOKPLOY_KEY"
+          test -n "$DOKPLOY_COMPOSE_ID"
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --header "x-api-key: $DOKPLOY_KEY" \
+            --data "{\"composeId\":\"$DOKPLOY_COMPOSE_ID\",\"title\":\"GitHub ${GITHUB_SHA::7}\",\"description\":\"Publicação automática da main\"}" \
+            "$DOKPLOY_URL/api/compose.deploy"

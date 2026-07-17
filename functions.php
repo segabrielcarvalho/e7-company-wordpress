@@ -81,6 +81,31 @@ function e7_company_meta_description(): void
 }
 add_action('wp_head', 'e7_company_meta_description', 1);
 
+function e7_company_social_meta(): void
+{
+    $title = __('E7 Company | Custom Software Built to Scale', 'e7-company');
+    $description = __('Custom software, digital products, cloud and AI solutions engineered for ambitious businesses.', 'e7-company');
+    $url = home_url('/');
+    $image = e7_company_asset('brand/e7-company-social-preview.jpg');
+
+    echo '<meta property="og:type" content="website">' . "\n";
+    echo '<meta property="og:site_name" content="E7 Company">' . "\n";
+    echo '<meta property="og:title" content="' . esc_attr($title) . '">' . "\n";
+    echo '<meta property="og:description" content="' . esc_attr($description) . '">' . "\n";
+    echo '<meta property="og:url" content="' . esc_url($url) . '">' . "\n";
+    echo '<meta property="og:image" content="' . esc_url($image) . '">' . "\n";
+    echo '<meta property="og:image:secure_url" content="' . esc_url($image) . '">' . "\n";
+    echo '<meta property="og:image:type" content="image/jpeg">' . "\n";
+    echo '<meta property="og:image:width" content="1200">' . "\n";
+    echo '<meta property="og:image:height" content="630">' . "\n";
+    echo '<meta property="og:image:alt" content="E7 Company — Custom software. Built to scale.">' . "\n";
+    echo '<meta name="twitter:card" content="summary_large_image">' . "\n";
+    echo '<meta name="twitter:title" content="' . esc_attr($title) . '">' . "\n";
+    echo '<meta name="twitter:description" content="' . esc_attr($description) . '">' . "\n";
+    echo '<meta name="twitter:image" content="' . esc_url($image) . '">' . "\n";
+}
+add_action('wp_head', 'e7_company_social_meta', 2);
+
 function e7_company_favicons(): void
 {
     $favicon = esc_url(e7_company_asset('brand/favicon.ico'));

@@ -150,6 +150,21 @@ test('uses the supplied E7 brand and exposes favicon assets', async () => {
   assert.match(functions, /add_action\('wp_head', 'e7_company_favicons'/);
 });
 
+test('publishes a branded 1200x630 social sharing preview', async () => {
+  const functions = await readThemeFile('functions.php');
+  await readThemeFile('assets/brand/e7-company-social-preview.jpg');
+
+  assert.match(functions, /property="og:type" content="website"/);
+  assert.match(functions, /property="og:title"/);
+  assert.match(functions, /property="og:description"/);
+  assert.match(functions, /property="og:url"/);
+  assert.match(functions, /property="og:image"/);
+  assert.match(functions, /property="og:image:width" content="1200"/);
+  assert.match(functions, /property="og:image:height" content="630"/);
+  assert.match(functions, /name="twitter:card" content="summary_large_image"/);
+  assert.match(functions, /brand\/e7-company-social-preview\.jpg/);
+});
+
 test('uses a process metric instead of an unverified years claim', async () => {
   const template = await readThemeFile('front-page.php');
 

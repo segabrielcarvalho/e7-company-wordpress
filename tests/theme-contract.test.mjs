@@ -368,6 +368,7 @@ test('deploys the WordPress security baseline before provisioning public sites',
   assert.match(compose, /E7_PROPOSALS_IMPORT_B64/);
   assert.match(compose, /E7_PROPOSALS_IMPORT_RESULT_TOKEN/);
   assert.match(compose, /e7-import-result-\$\$\{E7_PROPOSALS_IMPORT_RESULT_TOKEN\}\.txt/);
+  assert.match(compose, /> "\$\$\{result_file\}" 2>&1/);
   assert.match(compose, /base64 -d > "\$\$\{import_file\}"/);
   assert.match(compose, /wp e7-propostas import/);
 });

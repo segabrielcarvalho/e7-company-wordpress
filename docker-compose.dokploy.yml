@@ -278,8 +278,12 @@ services:
           exit 0
         fi
         if [ -n "$${result_file}" ]; then
-          wp e7-propostas import --file="$${import_file}" --password="$${E7_PROPOSALS_IMPORT_PASSWORD}" --url=https://proposal.e7company.com --allow-root > "$${result_file}"
+          set +e
+          wp e7-propostas import --file="$${import_file}" --password="$${E7_PROPOSALS_IMPORT_PASSWORD}" --url=https://proposal.e7company.com --allow-root > "$${result_file}" 2>&1
+          import_status=$$?
+          set -e
           chmod 0644 "$${result_file}"
+          if [ "$${import_status}" -ne 0 ]; then exit "$${import_status}"; fi
         else
           wp e7-propostas import --file="$${import_file}" --password="$${E7_PROPOSALS_IMPORT_PASSWORD}" --url=https://proposal.e7company.com --allow-root
         fi

@@ -222,7 +222,7 @@ services:
         fi
         wp theme enable e7-propostas --network --allow-root
         wp theme activate e7-propostas --url="$${site_url}" --allow-root
-        wp plugin activate e7-propostas-core --network --allow-root
+        wp plugin activate e7-propostas-core --url="$${site_url}" --allow-root
         wp option update e7_propostas_core_enabled 1 --url="$${site_url}" --allow-root
         wp option update blog_public 0 --url="$${site_url}" --allow-root
         wp option update home "$${site_url}" --url="$${site_url}" --allow-root
@@ -260,6 +260,7 @@ services:
       E7_PROPOSALS_IMPORT_PASSWORD: ${E7_PROPOSALS_IMPORT_PASSWORD:?E7_PROPOSALS_IMPORT_PASSWORD is required}
       E7_PROPOSALS_IMPORT_B64: ${E7_PROPOSALS_IMPORT_B64:-}
       E7_PROPOSALS_IMPORT_RESULT_TOKEN: ${E7_PROPOSALS_IMPORT_RESULT_TOKEN:-}
+      E7_PROPOSALS_IMPORT_FILE: /var/www/html/wp-content/uploads/.e7-proposals-import.json
     entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
@@ -280,13 +281,13 @@ services:
         fi
         if [ -n "$${result_file}" ]; then
           set +e
-          wp e7-propostas import --file="$${import_file}" --password="$${E7_PROPOSALS_IMPORT_PASSWORD}" --url=https://proposal.e7company.com --allow-root > "$${result_file}" 2>&1
+          wp eval-file /var/www/html/wp-content/plugins/e7-propostas-core/deploy/import-proposals.php --url=https://proposal.e7company.com --allow-root > "$${result_file}" 2>&1
           import_status=$$?
           set -e
           chmod 0644 "$${result_file}"
           if [ "$${import_status}" -ne 0 ]; then exit "$${import_status}"; fi
         else
-          wp e7-propostas import --file="$${import_file}" --password="$${E7_PROPOSALS_IMPORT_PASSWORD}" --url=https://proposal.e7company.com --allow-root
+          wp eval-file /var/www/html/wp-content/plugins/e7-propostas-core/deploy/import-proposals.php --url=https://proposal.e7company.com --allow-root
         fi
         rm -f "$${import_file}"
     volumes:

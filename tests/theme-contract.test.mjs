@@ -327,7 +327,7 @@ test('prepares the proposals site, plugin worker and isolated Chromium renderer'
   assert.match(compose, /command:\s*\["composer", "install", "--no-dev", "--classmap-authoritative"/);
   assert.match(compose, /propostas_site_setup:/);
   assert.match(compose, /site_url=https:\/\/proposal\.e7company\.com/);
-  assert.match(compose, /wp plugin activate e7-propostas-core --network/);
+  assert.match(compose, /wp plugin activate e7-propostas-core --url=/);
   assert.match(compose, /wp option update e7_propostas_core_enabled 1/);
   assert.match(compose, /wp theme activate e7-propostas/);
   assert.match(compose, /slug=privacy/);
@@ -371,7 +371,7 @@ test('deploys the WordPress security baseline before provisioning public sites',
   assert.match(compose, /e7-import-result-\$\$\{E7_PROPOSALS_IMPORT_RESULT_TOKEN\}\.txt/);
   assert.match(compose, /> "\$\$\{result_file\}" 2>&1/);
   assert.match(compose, /base64 -d > "\$\$\{import_file\}"/);
-  assert.match(compose, /wp e7-propostas import/);
+  assert.match(compose, /wp eval-file .*deploy\/import-proposals\.php/);
 });
 
 test('provisions the Ross Motorcycles multisite clone idempotently', async () => {

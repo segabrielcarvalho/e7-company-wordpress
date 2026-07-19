@@ -339,6 +339,8 @@ test('prepares the proposals site, plugin worker and isolated Chromium renderer'
   assert.match(compose, /shm_size:\s*["']2gb["']/i);
   assert.match(compose, /HOST=0\.0\.0\.0/);
   assert.match(compose, /ALLOW_FILE_PROTOCOL=false/);
+  assert.match(compose, /net\.createConnection\(3000, \\"127\.0\.0\.1\\"/);
+  assert.doesNotMatch(compose, /\/pressure\?token=/);
   assert.match(compose, /E7_PROPOSTAS_WEB_AWS_ACCESS_KEY_ID/);
   assert.match(compose, /E7_SNS_SENDER_ID/);
   assert.match(compose, /E7_PROPOSTAS_WORKER_AWS_ACCESS_KEY_ID/);

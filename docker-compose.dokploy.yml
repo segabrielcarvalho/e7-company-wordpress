@@ -257,10 +257,15 @@ services:
       WORDPRESS_DB_USER: ${DB_USER:?DB_USER is required}
       WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       E7_PROPOSALS_IMPORT_PASSWORD: ${E7_PROPOSALS_IMPORT_PASSWORD:?E7_PROPOSALS_IMPORT_PASSWORD is required}
+      E7_PROPOSALS_IMPORT_B64: ${E7_PROPOSALS_IMPORT_B64:-}
     entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
         import_file=/var/www/html/wp-content/uploads/.e7-proposals-import.json
+        if [ -n "$${E7_PROPOSALS_IMPORT_B64}" ]; then
+          umask 077
+          printf '%s' "$${E7_PROPOSALS_IMPORT_B64}" | base64 -d > "$${import_file}"
+        fi
         if [ ! -f "$${import_file}" ]; then
           echo "No proposal import pending."
           exit 0

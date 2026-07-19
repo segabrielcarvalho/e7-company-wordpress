@@ -258,19 +258,31 @@ services:
       WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       E7_PROPOSALS_IMPORT_PASSWORD: ${E7_PROPOSALS_IMPORT_PASSWORD:?E7_PROPOSALS_IMPORT_PASSWORD is required}
       E7_PROPOSALS_IMPORT_B64: ${E7_PROPOSALS_IMPORT_B64:-}
+      E7_PROPOSALS_IMPORT_RESULT_TOKEN: ${E7_PROPOSALS_IMPORT_RESULT_TOKEN:-}
     entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
         import_file=/var/www/html/wp-content/uploads/.e7-proposals-import.json
+        result_file=''
+        if [ -n "$${E7_PROPOSALS_IMPORT_RESULT_TOKEN}" ]; then
+          printf '%s' "$${E7_PROPOSALS_IMPORT_RESULT_TOKEN}" | grep -Eq '^[a-f0-9]{64}$'
+          result_file="/var/www/html/wp-content/uploads/e7-import-result-$${E7_PROPOSALS_IMPORT_RESULT_TOKEN}.txt"
+        fi
         if [ -n "$${E7_PROPOSALS_IMPORT_B64}" ]; then
           umask 077
           printf '%s' "$${E7_PROPOSALS_IMPORT_B64}" | base64 -d > "$${import_file}"
         fi
         if [ ! -f "$${import_file}" ]; then
+          if [ -n "$${result_file}" ]; then rm -f "$${result_file}"; fi
           echo "No proposal import pending."
           exit 0
         fi
-        wp e7-propostas import --file="$${import_file}" --password="$${E7_PROPOSALS_IMPORT_PASSWORD}" --url=https://proposal.e7company.com --allow-root
+        if [ -n "$${result_file}" ]; then
+          wp e7-propostas import --file="$${import_file}" --password="$${E7_PROPOSALS_IMPORT_PASSWORD}" --url=https://proposal.e7company.com --allow-root > "$${result_file}"
+          chmod 0644 "$${result_file}"
+        else
+          wp e7-propostas import --file="$${import_file}" --password="$${E7_PROPOSALS_IMPORT_PASSWORD}" --url=https://proposal.e7company.com --allow-root
+        fi
         rm -f "$${import_file}"
     volumes:
       - wp_app:/var/www/html

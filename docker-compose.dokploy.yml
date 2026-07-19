@@ -261,10 +261,16 @@ services:
       E7_PROPOSALS_IMPORT_B64: ${E7_PROPOSALS_IMPORT_B64:-}
       E7_PROPOSALS_IMPORT_RESULT_TOKEN: ${E7_PROPOSALS_IMPORT_RESULT_TOKEN:-}
       E7_PROPOSALS_IMPORT_FILE: /var/www/html/wp-content/uploads/.e7-proposals-import.json
+      E7_PROPOSALS_IMPORT_EXPECTED_HOST: proposal.e7company.com
+      E7_PROPOSALS_CLEANUP_SOURCE_IDS: ${E7_PROPOSALS_CLEANUP_SOURCE_IDS:-}
+      E7_PROPOSALS_CLEANUP_EXPECTED_HOST: e7company.com
     entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
         import_file=/var/www/html/wp-content/uploads/.e7-proposals-import.json
+        if [ -n "$${E7_PROPOSALS_CLEANUP_SOURCE_IDS}" ]; then
+          wp --url=https://e7company.com eval-file /var/www/html/wp-content/plugins/e7-propostas-core/deploy/cleanup-misrouted-proposals.php --allow-root
+        fi
         result_file=''
         if [ -n "$${E7_PROPOSALS_IMPORT_RESULT_TOKEN}" ]; then
           printf '%s' "$${E7_PROPOSALS_IMPORT_RESULT_TOKEN}" | grep -Eq '^[a-f0-9]{64}$'
@@ -281,13 +287,13 @@ services:
         fi
         if [ -n "$${result_file}" ]; then
           set +e
-          wp eval-file /var/www/html/wp-content/plugins/e7-propostas-core/deploy/import-proposals.php --url=https://proposal.e7company.com --allow-root > "$${result_file}" 2>&1
+          wp --url=https://proposal.e7company.com eval-file /var/www/html/wp-content/plugins/e7-propostas-core/deploy/import-proposals.php --allow-root > "$${result_file}" 2>&1
           import_status=$$?
           set -e
           chmod 0644 "$${result_file}"
           if [ "$${import_status}" -ne 0 ]; then exit "$${import_status}"; fi
         else
-          wp eval-file /var/www/html/wp-content/plugins/e7-propostas-core/deploy/import-proposals.php --url=https://proposal.e7company.com --allow-root
+          wp --url=https://proposal.e7company.com eval-file /var/www/html/wp-content/plugins/e7-propostas-core/deploy/import-proposals.php --allow-root
         fi
         rm -f "$${import_file}"
     volumes:

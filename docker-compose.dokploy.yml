@@ -223,6 +223,7 @@ services:
         wp theme enable e7-propostas --network --allow-root
         wp theme activate e7-propostas --url="$${site_url}" --allow-root
         wp plugin activate e7-propostas-core --url="$${site_url}" --allow-root
+        wp option update e7_propostas_core_enabled 1 --url="$${site_url}" --allow-root
         wp option update blog_public 0 --url="$${site_url}" --allow-root
         wp option update home "$${site_url}" --url="$${site_url}" --allow-root
         wp option update siteurl "$${site_url}" --url="$${site_url}" --allow-root

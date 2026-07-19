@@ -25,13 +25,23 @@ services:
       WORDPRESS_DB_USER: ${DB_USER:?DB_USER is required}
       WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       WORDPRESS_DEBUG: ${WORDPRESS_DEBUG:-0}
+      E7_AWS_REGION: ${E7_AWS_REGION:?E7_AWS_REGION is required}
+      E7_SES_FROM_EMAIL: ${E7_SES_FROM_EMAIL:?E7_SES_FROM_EMAIL is required}
+      E7_PROPOSTAS_S3_BUCKET: ${E7_PROPOSTAS_S3_BUCKET:?E7_PROPOSTAS_S3_BUCKET is required}
+      E7_PROPOSTAS_KMS_SIGNING_KEY_ID: ${E7_PROPOSTAS_KMS_SIGNING_KEY_ID:?E7_PROPOSTAS_KMS_SIGNING_KEY_ID is required}
+      E7_PROPOSTAS_EXTERNAL_WORKER: "1"
+      AWS_ACCESS_KEY_ID: ${E7_PROPOSTAS_WEB_AWS_ACCESS_KEY_ID:?E7_PROPOSTAS_WEB_AWS_ACCESS_KEY_ID is required}
+      AWS_SECRET_ACCESS_KEY: ${E7_PROPOSTAS_WEB_AWS_SECRET_ACCESS_KEY:?E7_PROPOSTAS_WEB_AWS_SECRET_ACCESS_KEY is required}
+      AWS_SESSION_TOKEN: ${E7_PROPOSTAS_WEB_AWS_SESSION_TOKEN:-}
       WORDPRESS_CONFIG_EXTRA: |
         if (isset($$_SERVER['HTTP_X_FORWARDED_PROTO']) && strpos($$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false) {
             $$_SERVER['HTTPS'] = 'on';
         }
         define('WP_ENVIRONMENT_TYPE', 'production');
         define('WP_MEMORY_LIMIT', '256M');
+        define('WP_DEBUG_DISPLAY', false);
         define('DISALLOW_FILE_EDIT', true);
+        define('FORCE_SSL_ADMIN', true);
         define('WP_AUTO_UPDATE_CORE', false);
         define('MULTISITE', true);
         define('SUBDOMAIN_INSTALL', true);
@@ -82,6 +92,210 @@ services:
       wordpress:
         condition: service_healthy
 
+  propostas_sync:
+    image: alpine/git:2.49.1
+    restart: "no"
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        themes=/wordpress/wp-content/themes
+        plugins=/wordpress/wp-content/plugins
+        rm -rf /tmp/e7-propostas /tmp/e7-propostas-core "$${themes}/e7-propostas.next" "$${themes}/e7-propostas.previous" "$${plugins}/e7-propostas-core.next" "$${plugins}/e7-propostas-core.previous"
+        git clone --depth 1 --branch main ${E7_PROPOSTAS_THEME_REPOSITORY:?E7_PROPOSTAS_THEME_REPOSITORY is required} /tmp/e7-propostas
+        git clone --depth 1 --branch main ${E7_PROPOSTAS_PLUGIN_REPOSITORY:?E7_PROPOSTAS_PLUGIN_REPOSITORY is required} /tmp/e7-propostas-core
+        cp -a /tmp/e7-propostas "$${themes}/e7-propostas.next"
+        cp -a /tmp/e7-propostas-core "$${plugins}/e7-propostas-core.next"
+        rm -rf "$${themes}/e7-propostas.next/.git" "$${themes}/e7-propostas.next/node_modules" "$${plugins}/e7-propostas-core.next/.git" "$${plugins}/e7-propostas-core.next/vendor" "$${plugins}/e7-propostas-core.next/.phpunit.cache"
+        if [ -d "$${themes}/e7-propostas" ]; then mv "$${themes}/e7-propostas" "$${themes}/e7-propostas.previous"; fi
+        if [ -d "$${plugins}/e7-propostas-core" ]; then mv "$${plugins}/e7-propostas-core" "$${plugins}/e7-propostas-core.previous"; fi
+        mv "$${themes}/e7-propostas.next" "$${themes}/e7-propostas"
+        mv "$${plugins}/e7-propostas-core.next" "$${plugins}/e7-propostas-core"
+        rm -rf "$${themes}/e7-propostas.previous" "$${plugins}/e7-propostas-core.previous"
+    volumes:
+      - wp_app:/wordpress
+    depends_on:
+      wordpress:
+        condition: service_healthy
+
+  propostas_dependencies:
+    image: composer:2.8.6
+    restart: "no"
+    working_dir: /wordpress/wp-content/plugins/e7-propostas-core
+    command: ["composer", "install", "--no-dev", "--classmap-authoritative", "--no-interaction"]
+    volumes:
+      - wp_app:/wordpress
+    depends_on:
+      propostas_sync:
+        condition: service_completed_successfully
+
+  security_setup:
+    image: wordpress:cli-php8.3
+    user: "0:0"
+    restart: "no"
+    environment:
+      WORDPRESS_DB_HOST: wp_db:3306
+      WORDPRESS_DB_NAME: ${DB_NAME:?DB_NAME is required}
+      WORDPRESS_DB_USER: ${DB_USER:?DB_USER is required}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      E7_ADMIN_LOGIN_SLUG: ${E7_ADMIN_LOGIN_SLUG:?E7_ADMIN_LOGIN_SLUG is required}
+      WORDPRESS_CONFIG_EXTRA: |
+        define('MULTISITE', true);
+        define('SUBDOMAIN_INSTALL', true);
+        define('DOMAIN_CURRENT_SITE', 'e7company.com');
+        define('PATH_CURRENT_SITE', '/');
+        define('SITE_ID_CURRENT_SITE', 1);
+        define('BLOG_ID_CURRENT_SITE', 1);
+        define('COOKIE_DOMAIN', false);
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        case "$${E7_ADMIN_LOGIN_SLUG}" in ''|*[!A-Za-z0-9_-]*) echo "Invalid admin login slug" >&2; exit 1;; esac
+        mkdir -p /var/www/html/wp-content/mu-plugins /var/www/html/wp-content/uploads
+        cp /var/www/html/wp-content/plugins/e7-propostas-core/deploy/e7-security-hardening.php /var/www/html/wp-content/mu-plugins/e7-security-hardening.php
+        cp /var/www/html/wp-content/plugins/e7-propostas-core/deploy/uploads.htaccess /var/www/html/wp-content/uploads/.htaccess
+        cp /var/www/html/wp-content/plugins/e7-propostas-core/deploy/root.htaccess /var/www/html/.htaccess
+        if ! wp plugin is-installed wordfence --allow-root; then wp plugin install wordfence --version=8.2.2 --allow-root; fi
+        if ! wp plugin is-installed wps-hide-login --allow-root; then wp plugin install wps-hide-login --version=1.9.18 --allow-root; fi
+        wp plugin activate wordfence wps-hide-login --network --allow-root
+        wp plugin auto-updates enable wordfence wps-hide-login --allow-root
+        wp site option update whl_page "$${E7_ADMIN_LOGIN_SLUG}" --allow-root
+        wp site option update whl_redirect_admin 404 --allow-root
+        wp eval 'wfConfig::set("loginSec_maxFailures", 5); wfConfig::set("loginSec_maxForgotPasswd", 5); wfConfig::set("loginSec_countFailMins", 60); wfConfig::set("loginSec_lockoutMins", 240); wfConfig::set("loginSec_strongPasswds_enabled", true); wfConfig::set("loginSec_strongPasswds", "pubs"); wfConfig::set("loginSec_breachPasswds_enabled", true); wfConfig::set("loginSec_breachPasswds", "admins");' --allow-root
+        wp rewrite flush --allow-root
+    volumes:
+      - wp_app:/var/www/html
+    depends_on:
+      wp_db:
+        condition: service_healthy
+      theme_sync:
+        condition: service_completed_successfully
+      propostas_dependencies:
+        condition: service_completed_successfully
+
+  propostas_renderer:
+    image: ghcr.io/browserless/chromium@sha256:9e48bf8df71ba285f974dd9bd9effb59ce8a1e767cfe734b36a24b065ab033f4
+    restart: unless-stopped
+    shm_size: "2gb"
+    environment:
+      - TOKEN=${E7_PROPOSTAS_RENDERER_TOKEN:?E7_PROPOSTAS_RENDERER_TOKEN is required}
+      - HOST=0.0.0.0
+      - CONCURRENT=2
+      - QUEUED=10
+      - TIMEOUT=60000
+      - ALLOW_FILE_PROTOCOL=false
+      - ENABLE_DEBUGGER=false
+      - TZ=UTC
+    networks:
+      - propostas_render
+    healthcheck:
+      test: ["CMD-SHELL", "node -e 'fetch(\"http://127.0.0.1:3000/pressure?token=$${TOKEN}\").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))'"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  propostas_site_setup:
+    image: wordpress:cli-php8.3
+    user: "0:0"
+    restart: "no"
+    environment:
+      WORDPRESS_DB_HOST: wp_db:3306
+      WORDPRESS_DB_NAME: ${DB_NAME:?DB_NAME is required}
+      WORDPRESS_DB_USER: ${DB_USER:?DB_USER is required}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      WORDPRESS_CONFIG_EXTRA: |
+        define('MULTISITE', true);
+        define('SUBDOMAIN_INSTALL', true);
+        define('DOMAIN_CURRENT_SITE', 'e7company.com');
+        define('PATH_CURRENT_SITE', '/');
+        define('SITE_ID_CURRENT_SITE', 1);
+        define('BLOG_ID_CURRENT_SITE', 1);
+        define('COOKIE_DOMAIN', false);
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        site_url=https://proposal.e7company.com
+        admin_email="$$(wp option get admin_email --url=https://e7company.com --allow-root)"
+        if ! wp site list --field=url --allow-root | grep -Fx "$${site_url}/" >/dev/null; then
+          wp site create --slug=proposal --title="E7 Proposals" --email="$${admin_email}" --allow-root
+        fi
+        wp theme enable e7-propostas --network --allow-root
+        wp theme activate e7-propostas --url="$${site_url}" --allow-root
+        wp plugin activate e7-propostas-core --url="$${site_url}" --allow-root
+        wp option update blog_public 0 --url="$${site_url}" --allow-root
+        wp option update home "$${site_url}" --url="$${site_url}" --allow-root
+        wp option update siteurl "$${site_url}" --url="$${site_url}" --allow-root
+        slug=privacy
+        if ! wp post list --post_type=page --name="$${slug}" --field=ID --url="$${site_url}" --allow-root | grep -q .; then
+          wp post create --post_type=page --post_status=publish --post_name="$${slug}" --post_title="Privacy and data protection" --post_content="This page describes the proposal platform data flow, retention and contact channels. Final legal wording and the initial seven-year retention period require legal approval before production." --url="$${site_url}" --allow-root
+        fi
+        slug=electronic-acceptance
+        if ! wp post list --post_type=page --name="$${slug}" --field=ID --url="$${site_url}" --allow-root | grep -q .; then
+          wp post create --post_type=page --post_status=publish --post_name="$${slug}" --post_title="Electronic acceptance terms" --post_content="Electronic acceptance records the proposal version, consent text, UTC time and authentication evidence. This platform does not claim QES, eIDAS or ICP-Brasil certification. Final terms require legal approval before production." --url="$${site_url}" --allow-root
+        fi
+        slug=validation
+        if ! wp post list --post_type=page --name="$${slug}" --field=ID --url="$${site_url}" --allow-root | grep -q .; then
+          wp post create --post_type=page --post_status=publish --post_name="$${slug}" --post_title="Document validation" --post_content="Use the complete validation link supplied with the accepted proposal. It contains the non-personal document identifier used to verify status, version, hashes and cryptographic signature state." --url="$${site_url}" --allow-root
+        fi
+        wp rewrite flush --url="$${site_url}" --allow-root
+    volumes:
+      - wp_app:/var/www/html
+    depends_on:
+      wp_db:
+        condition: service_healthy
+      security_setup:
+        condition: service_completed_successfully
+
+  propostas_worker:
+    image: wordpress:cli-php8.3
+    user: "0:0"
+    restart: unless-stopped
+    environment:
+      WORDPRESS_DB_HOST: wp_db:3306
+      WORDPRESS_DB_NAME: ${DB_NAME:?DB_NAME is required}
+      WORDPRESS_DB_USER: ${DB_USER:?DB_USER is required}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      E7_AWS_REGION: ${E7_AWS_REGION:?E7_AWS_REGION is required}
+      E7_SES_FROM_EMAIL: ${E7_SES_FROM_EMAIL:?E7_SES_FROM_EMAIL is required}
+      E7_PROPOSTAS_S3_BUCKET: ${E7_PROPOSTAS_S3_BUCKET:?E7_PROPOSTAS_S3_BUCKET is required}
+      E7_PROPOSTAS_KMS_SIGNING_KEY_ID: ${E7_PROPOSTAS_KMS_SIGNING_KEY_ID:?E7_PROPOSTAS_KMS_SIGNING_KEY_ID is required}
+      E7_PROPOSTAS_RENDERER_URL: http://propostas_renderer:3000/chromium/pdf?token=${E7_PROPOSTAS_RENDERER_TOKEN:?E7_PROPOSTAS_RENDERER_TOKEN is required}
+      E7_PROPOSTAS_RETENTION_YEARS: ${E7_PROPOSTAS_RETENTION_YEARS:-7}
+      AWS_ACCESS_KEY_ID: ${E7_PROPOSTAS_WORKER_AWS_ACCESS_KEY_ID:?E7_PROPOSTAS_WORKER_AWS_ACCESS_KEY_ID is required}
+      AWS_SECRET_ACCESS_KEY: ${E7_PROPOSTAS_WORKER_AWS_SECRET_ACCESS_KEY:?E7_PROPOSTAS_WORKER_AWS_SECRET_ACCESS_KEY is required}
+      AWS_SESSION_TOKEN: ${E7_PROPOSTAS_WORKER_AWS_SESSION_TOKEN:-}
+      WORDPRESS_CONFIG_EXTRA: |
+        define('MULTISITE', true);
+        define('SUBDOMAIN_INSTALL', true);
+        define('DOMAIN_CURRENT_SITE', 'e7company.com');
+        define('PATH_CURRENT_SITE', '/');
+        define('SITE_ID_CURRENT_SITE', 1);
+        define('BLOG_ID_CURRENT_SITE', 1);
+        define('COOKIE_DOMAIN', false);
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        while true; do
+          wp e7-propostas jobs run --url=https://proposal.e7company.com --allow-root
+          sleep 60
+        done
+    volumes:
+      - wp_app:/var/www/html
+    networks:
+      - default
+      - propostas_render
+    depends_on:
+      propostas_site_setup:
+        condition: service_completed_successfully
+      propostas_renderer:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wp option get e7_propostas_core_enabled --url=https://proposal.e7company.com --allow-root | grep -qx 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
   ross_site_setup:
     image: wordpress:cli-php8.3
     user: "0:0"
@@ -124,7 +338,13 @@ services:
         condition: service_healthy
       theme_sync:
         condition: service_completed_successfully
+      security_setup:
+        condition: service_completed_successfully
 
 volumes:
   wp_app:
   wp_data:
+
+networks:
+  propostas_render:
+    internal: true

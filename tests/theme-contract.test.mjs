@@ -318,10 +318,52 @@ test('applies long-lived caching to GTranslate assets during the Dokploy sync', 
   assert.match(cacheRules, /ExpiresByType image\/svg\+xml/);
 });
 
+test('prepares the proposals site, plugin worker and isolated Chromium renderer', async () => {
+  const compose = await readThemeFile('docker-compose.dokploy.yml');
+
+  assert.match(compose, /propostas_sync:/);
+  assert.match(compose, /E7_PROPOSTAS_THEME_REPOSITORY/);
+  assert.match(compose, /E7_PROPOSTAS_PLUGIN_REPOSITORY/);
+  assert.match(compose, /command:\s*\["composer", "install", "--no-dev", "--classmap-authoritative"/);
+  assert.match(compose, /propostas_site_setup:/);
+  assert.match(compose, /site_url=https:\/\/proposal\.e7company\.com/);
+  assert.match(compose, /wp plugin activate e7-propostas-core/);
+  assert.match(compose, /wp theme activate e7-propostas/);
+  assert.match(compose, /slug=privacy/);
+  assert.match(compose, /slug=electronic-acceptance/);
+  assert.match(compose, /slug=validation/);
+  assert.match(compose, /propostas_worker:/);
+  assert.match(compose, /wp e7-propostas jobs run/);
+  assert.match(compose, /propostas_renderer:/);
+  assert.match(compose, /ghcr\.io\/browserless\/chromium@sha256:[a-f0-9]{64}/);
+  assert.match(compose, /shm_size:\s*["']2gb["']/i);
+  assert.match(compose, /HOST=0\.0\.0\.0/);
+  assert.match(compose, /ALLOW_FILE_PROTOCOL=false/);
+  assert.match(compose, /E7_PROPOSTAS_WEB_AWS_ACCESS_KEY_ID/);
+  assert.match(compose, /E7_PROPOSTAS_WORKER_AWS_ACCESS_KEY_ID/);
+  assert.match(compose, /propostas_render:[\s\S]*internal:\s*true/);
+  assert.match(compose, /propostas_renderer:[\s\S]*condition:\s*service_healthy/);
+});
+
+test('deploys the WordPress security baseline before provisioning public sites', async () => {
+  const compose = await readThemeFile('docker-compose.dokploy.yml');
+
+  assert.match(compose, /security_setup:/);
+  assert.match(compose, /deploy\/e7-security-hardening\.php/);
+  assert.match(compose, /deploy\/uploads\.htaccess/);
+  assert.match(compose, /deploy\/root\.htaccess/);
+  assert.match(compose, /wp plugin install wordfence --version=8\.2\.2/);
+  assert.match(compose, /wp plugin install wps-hide-login --version=1\.9\.18/);
+  assert.match(compose, /E7_ADMIN_LOGIN_SLUG/);
+  assert.match(compose, /loginSec_maxFailures/);
+  assert.match(compose, /DISALLOW_FILE_EDIT/);
+  assert.match(compose, /WP_DEBUG_DISPLAY/);
+});
+
 test('provisions the Ross Motorcycles multisite clone idempotently', async () => {
   const compose = await readThemeFile('docker-compose.dokploy.yml');
 
-  assert.equal((compose.match(/WORDPRESS_CONFIG_EXTRA/g) ?? []).length, 2);
+  assert.equal((compose.match(/WORDPRESS_CONFIG_EXTRA/g) ?? []).length, 5);
   assert.match(compose, /github\.com\/segabrielcarvalho\/ross-motorcycles-cork\.git/);
   assert.match(compose, /ross-motorcycles\.e7company\.com/);
   assert.match(compose, /wp site create/);

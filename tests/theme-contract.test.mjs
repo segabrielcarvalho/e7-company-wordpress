@@ -359,6 +359,9 @@ test('deploys the WordPress security baseline before provisioning public sites',
   assert.match(compose, /loginSec_maxFailures/);
   assert.match(compose, /DISALLOW_FILE_EDIT/);
   assert.match(compose, /WP_DEBUG_DISPLAY/);
+  assert.match(compose, /propostas_import:/);
+  assert.match(compose, /e7-proposals-import\.json/);
+  assert.match(compose, /wp e7-propostas import/);
 });
 
 test('provisions the Ross Motorcycles multisite clone idempotently', async () => {

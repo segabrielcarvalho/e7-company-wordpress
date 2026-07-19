@@ -247,6 +247,34 @@ services:
       security_setup:
         condition: service_completed_successfully
 
+  propostas_import:
+    image: wordpress:cli-php8.3
+    user: "0:0"
+    restart: "no"
+    environment:
+      WORDPRESS_DB_HOST: wp_db:3306
+      WORDPRESS_DB_NAME: ${DB_NAME:?DB_NAME is required}
+      WORDPRESS_DB_USER: ${DB_USER:?DB_USER is required}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      E7_PROPOSALS_IMPORT_PASSWORD: ${E7_PROPOSALS_IMPORT_PASSWORD:?E7_PROPOSALS_IMPORT_PASSWORD is required}
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        import_dir=/var/www/html/.e7-import
+        import_file="$${import_dir}/e7-proposals-import.json"
+        if [ ! -f "$${import_file}" ]; then
+          echo "No proposal import pending."
+          exit 0
+        fi
+        wp e7-propostas import --file="$${import_file}" --password="$${E7_PROPOSALS_IMPORT_PASSWORD}" --url=https://proposal.e7company.com --allow-root
+        rm -f "$${import_file}"
+        rmdir "$${import_dir}" 2>/dev/null || true
+    volumes:
+      - wp_app:/var/www/html
+    depends_on:
+      propostas_site_setup:
+        condition: service_completed_successfully
+
   propostas_worker:
     image: wordpress:cli-php8.3
     user: "0:0"
@@ -286,7 +314,7 @@ services:
       - default
       - propostas_render
     depends_on:
-      propostas_site_setup:
+      propostas_import:
         condition: service_completed_successfully
       propostas_renderer:
         condition: service_healthy

@@ -378,7 +378,7 @@ test('deploys the WordPress security baseline before provisioning public sites',
 test('provisions the Ross Motorcycles multisite clone idempotently', async () => {
   const compose = await readThemeFile('docker-compose.dokploy.yml');
 
-  assert.equal((compose.match(/WORDPRESS_CONFIG_EXTRA/g) ?? []).length, 5);
+  assert.equal((compose.match(/WORDPRESS_CONFIG_EXTRA/g) ?? []).length, 6);
   assert.match(compose, /github\.com\/segabrielcarvalho\/ross-motorcycles-cork\.git/);
   assert.match(compose, /ross-motorcycles\.e7company\.com/);
   assert.match(compose, /wp site create/);

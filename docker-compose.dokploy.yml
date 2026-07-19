@@ -264,6 +264,14 @@ services:
       E7_PROPOSALS_IMPORT_EXPECTED_HOST: proposal.e7company.com
       E7_PROPOSALS_CLEANUP_SOURCE_IDS: ${E7_PROPOSALS_CLEANUP_SOURCE_IDS:-}
       E7_PROPOSALS_CLEANUP_EXPECTED_HOST: e7company.com
+      WORDPRESS_CONFIG_EXTRA: |
+        define('MULTISITE', true);
+        define('SUBDOMAIN_INSTALL', true);
+        define('DOMAIN_CURRENT_SITE', 'e7company.com');
+        define('PATH_CURRENT_SITE', '/');
+        define('SITE_ID_CURRENT_SITE', 1);
+        define('BLOG_ID_CURRENT_SITE', 1);
+        define('COOKIE_DOMAIN', false);
     entrypoint: ["/bin/sh", "-ec"]
     command:
       - |

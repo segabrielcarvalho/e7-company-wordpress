@@ -158,7 +158,7 @@ services:
         if ! wp plugin is-installed wordfence --allow-root; then wp plugin install wordfence --version=8.2.2 --allow-root; fi
         if ! wp plugin is-installed wps-hide-login --allow-root; then wp plugin install wps-hide-login --version=1.9.18 --allow-root; fi
         wp plugin activate wordfence wps-hide-login --network --allow-root
-        wp plugin auto-updates enable wordfence wps-hide-login --allow-root
+        wp plugin auto-updates enable wordfence wps-hide-login --allow-root || true
         wp site option update whl_page "$${E7_ADMIN_LOGIN_SLUG}" --allow-root
         wp site option update whl_redirect_admin 404 --allow-root
         wp eval 'wfConfig::set("loginSec_maxFailures", 5); wfConfig::set("loginSec_maxForgotPasswd", 5); wfConfig::set("loginSec_countFailMins", 60); wfConfig::set("loginSec_lockoutMins", 240); wfConfig::set("loginSec_strongPasswds_enabled", true); wfConfig::set("loginSec_strongPasswds", "pubs"); wfConfig::set("loginSec_breachPasswds_enabled", true); wfConfig::set("loginSec_breachPasswds", "admins");' --allow-root

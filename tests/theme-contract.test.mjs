@@ -357,6 +357,7 @@ test('deploys the WordPress security baseline before provisioning public sites',
   assert.match(compose, /deploy\/root\.htaccess/);
   assert.match(compose, /wp plugin install wordfence --version=8\.2\.2/);
   assert.match(compose, /wp plugin install wps-hide-login --version=1\.9\.18/);
+  assert.match(compose, /wp plugin auto-updates enable wordfence wps-hide-login --allow-root \|\| true/);
   assert.match(compose, /E7_ADMIN_LOGIN_SLUG/);
   assert.match(compose, /loginSec_maxFailures/);
   assert.match(compose, /DISALLOW_FILE_EDIT/);

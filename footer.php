@@ -36,7 +36,7 @@
     </div>
     <div class="border-t border-white/10">
         <div class="mx-auto flex max-w-[1440px] flex-col gap-3 px-5 py-6 text-xs text-white/60 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-12">
-            <p>© <?php echo esc_html(wp_date('Y')); ?> E7 Company. All rights reserved.</p>
+            <p>© <?php echo esc_html(wp_date('Y')); ?> E7 Company Tecnologia LTDA. All rights reserved.</p>
             <p>Strategy · Design · Technology</p>
         </div>
     </div>

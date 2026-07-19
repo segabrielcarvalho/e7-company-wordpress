@@ -364,6 +364,7 @@ test('deploys the WordPress security baseline before provisioning public sites',
   assert.match(compose, /WP_DEBUG_DISPLAY/);
   assert.match(compose, /propostas_import:/);
   assert.match(compose, /e7-proposals-import\.json/);
+  assert.match(compose, /wp-content\/uploads\/\.e7-proposals-import\.json/);
   assert.match(compose, /wp e7-propostas import/);
 });
 

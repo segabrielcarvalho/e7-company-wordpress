@@ -287,13 +287,13 @@ services:
         fi
         if [ -n "$${result_file}" ]; then
           set +e
-          wp --url=https://proposal.e7company.com eval-file /var/www/html/wp-content/plugins/e7-propostas-core/deploy/import-proposals.php --allow-root > "$${result_file}" 2>&1
+          wp --url=proposal.e7company.com eval-file /var/www/html/wp-content/plugins/e7-propostas-core/deploy/import-proposals.php --allow-root > "$${result_file}" 2>&1
           import_status=$$?
           set -e
           chmod 0644 "$${result_file}"
           if [ "$${import_status}" -ne 0 ]; then exit "$${import_status}"; fi
         else
-          wp --url=https://proposal.e7company.com eval-file /var/www/html/wp-content/plugins/e7-propostas-core/deploy/import-proposals.php --allow-root
+          wp --url=proposal.e7company.com eval-file /var/www/html/wp-content/plugins/e7-propostas-core/deploy/import-proposals.php --allow-root
         fi
         rm -f "$${import_file}"
     volumes:

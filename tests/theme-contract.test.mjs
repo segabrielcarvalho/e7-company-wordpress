@@ -336,11 +336,13 @@ test('imports a private proposal through a production-only manual workflow', asy
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /environment:\s*production/);
   assert.match(workflow, /secrets\.E7_PROPOSALS_IMPORT_B64/);
+  assert.match(workflow, /secrets\.E7_PROPOSALS_IMPORT_PASSWORD/);
   assert.match(workflow, /api\/compose\.one/);
   assert.match(workflow, /api\/compose\.saveEnvironment/);
   assert.match(workflow, /api\/compose\.deploy/);
   assert.match(workflow, /trap restore_environment EXIT/);
   assert.match(workflow, /E7_PROPOSALS_IMPORT_B64=/);
+  assert.match(workflow, /E7_PROPOSALS_IMPORT_PASSWORD=/);
   assert.match(workflow, /data-e7-password-form/);
   assert.match(workflow, /api\/compose\.readLogs/);
   assert.match(workflow, /propostas_import-1/);

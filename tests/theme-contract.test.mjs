@@ -342,6 +342,7 @@ test('prepares the proposals site, plugin worker and isolated Chromium renderer'
   assert.match(compose, /site_url=https:\/\/proposal\.e7company\.com/);
   assert.match(compose, /wp plugin activate e7-propostas-core --url=/);
   assert.match(compose, /propostas_site_setup:[\s\S]*extension_loaded\("sodium"\)/);
+  assert.match(wordpressService, /extension_loaded\(\\"sodium\\"\)/);
   assert.match(compose, /wp option update e7_propostas_core_enabled 1/);
   assert.match(compose, /wp theme activate e7-propostas/);
   assert.match(compose, /slug=privacy/);

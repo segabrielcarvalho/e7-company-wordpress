@@ -361,10 +361,10 @@ test('prepares the proposals site, plugin worker and isolated Chromium renderer'
   assert.match(compose, /E7_PROPOSTAS_WEB_AWS_ACCESS_KEY_ID/);
   assert.match(compose, /E7_SNS_SENDER_ID/);
   assert.match(compose, /E7_PROPOSTAS_WORKER_AWS_ACCESS_KEY_ID/);
-  assert.match(wordpressService, /E7_PROPOSTAS_OTP_ENABLED:\s*\$\{E7_PROPOSTAS_OTP_ENABLED:-0\}/);
-  assert.match(wordpressService, /E7_PROPOSTAS_FINAL_EMAIL_ENABLED:\s*\$\{E7_PROPOSTAS_FINAL_EMAIL_ENABLED:-0\}/);
-  assert.match(workerService, /E7_PROPOSTAS_OTP_ENABLED:\s*\$\{E7_PROPOSTAS_OTP_ENABLED:-0\}/);
-  assert.match(workerService, /E7_PROPOSTAS_FINAL_EMAIL_ENABLED:\s*\$\{E7_PROPOSTAS_FINAL_EMAIL_ENABLED:-0\}/);
+  assert.match(wordpressService, /E7_PROPOSTAS_OTP_ENABLED:\s*["']0["']/);
+  assert.match(wordpressService, /E7_PROPOSTAS_FINAL_EMAIL_ENABLED:\s*["']0["']/);
+  assert.match(workerService, /E7_PROPOSTAS_OTP_ENABLED:\s*["']0["']/);
+  assert.match(workerService, /E7_PROPOSTAS_FINAL_EMAIL_ENABLED:\s*["']0["']/);
   assert.match(compose, /E7Propostas\\WordPress\\Installer::ensureSchema\(\)/);
   assert.match(compose, /e7_propostas_schema_version/);
   assert.match(compose, /propostas_render:[\s\S]*internal:\s*true/);

@@ -51,7 +51,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: Acionar o Compose no Dokploy
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Sincronizar e acionar o Compose no Dokploy
         env:
           DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
           DOKPLOY_KEY: ${{ secrets.DOKPLOY_KEY }}
@@ -60,6 +63,16 @@ jobs:
           test -n "$DOKPLOY_URL"
           test -n "$DOKPLOY_KEY"
           test -n "$DOKPLOY_COMPOSE_ID"
+          jq --null-input \
+            --arg composeId "$DOKPLOY_COMPOSE_ID" \
+            --rawfile composeFile docker-compose.dokploy.yml \
+            '{composeId: $composeId, composeFile: $composeFile}' \
+            | curl --fail-with-body --silent --show-error \
+                --request POST \
+                --header "Content-Type: application/json" \
+                --header "x-api-key: $DOKPLOY_KEY" \
+                --data-binary @- \
+                "$DOKPLOY_URL/api/compose.update"
           curl --fail-with-body --silent --show-error \
             --request POST \
             --header "Content-Type: application/json" \

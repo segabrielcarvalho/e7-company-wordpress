@@ -318,6 +318,18 @@ test('applies long-lived caching to GTranslate assets during the Dokploy sync', 
   assert.match(cacheRules, /ExpiresByType image\/svg\+xml/);
 });
 
+test('synchronizes the versioned Compose before triggering the Dokploy deployment', async () => {
+  const workflow = await readThemeFile('.github/workflows/deploy.yml');
+  const updatePosition = workflow.indexOf('/api/compose.update');
+  const deployPosition = workflow.indexOf('/api/compose.deploy');
+
+  assert.match(workflow, /uses: actions\/checkout@v4/);
+  assert.match(workflow, /--rawfile composeFile docker-compose\.dokploy\.yml/);
+  assert.match(workflow, /composeFile: \$composeFile/);
+  assert.ok(updatePosition >= 0, 'The workflow must synchronize the versioned Compose');
+  assert.ok(deployPosition > updatePosition, 'The synchronized Compose must be deployed only after the update succeeds');
+});
+
 test('prepares the proposals site, plugin worker and isolated Chromium renderer', async () => {
   const compose = await readThemeFile('docker-compose.dokploy.yml');
   const wordpressService = compose.match(/\n  wordpress:\n[\s\S]*?(?=\n  [a-z_]+:\n)/)?.[0] ?? '';

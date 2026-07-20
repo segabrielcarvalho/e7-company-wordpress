@@ -321,14 +321,23 @@ test('applies long-lived caching to GTranslate assets during the Dokploy sync', 
 test('prepares the proposals site, plugin worker and isolated Chromium renderer', async () => {
   const compose = await readThemeFile('docker-compose.dokploy.yml');
   const wordpressService = compose.match(/\n  wordpress:\n[\s\S]*?(?=\n  [a-z_]+:\n)/)?.[0] ?? '';
+  const syncService = compose.match(/\n  propostas_sync:\n[\s\S]*?(?=\n  [a-z_]+:\n)/)?.[0] ?? '';
   const workerService = compose.match(/\n  propostas_worker:\n[\s\S]*?(?=\n  [a-z_]+:\n|\nvolumes:\n)/)?.[0] ?? '';
 
   assert.match(compose, /propostas_sync:/);
   assert.match(compose, /E7_PROPOSTAS_THEME_REPOSITORY/);
   assert.match(compose, /E7_PROPOSTAS_PLUGIN_REPOSITORY/);
-  assert.match(compose, /composer install --no-dev --classmap-authoritative --no-interaction --no-progress --prefer-dist/);
+  assert.match(compose, /composer install --working-dir="\$\$\{plugin_next\}" --no-dev --classmap-authoritative --no-interaction --no-progress --prefer-dist/);
   assert.match(compose, /composer check-platform-reqs --no-dev/);
   assert.match(compose, /class_exists\("BaconQrCode\\\\Writer"\)/);
+  assert.match(syncService, /image:\s*composer:2\.8\.6/);
+  assert.match(syncService, /e7-propostas-core\.next/);
+  assert.match(syncService, /rollback_swap/);
+  assert.match(syncService, /\$\$argv\[1\]/);
+  assert.ok(
+    syncService.indexOf('composer install --working-dir="$${plugin_next}"') < syncService.indexOf('mv "$${plugin_next}"'),
+    'Composer dependencies must be installed before the active plugin directory is swapped',
+  );
   assert.match(compose, /propostas_site_setup:/);
   assert.match(compose, /site_url=https:\/\/proposal\.e7company\.com/);
   assert.match(compose, /wp plugin activate e7-propostas-core --url=/);

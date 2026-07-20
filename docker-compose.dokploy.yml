@@ -96,24 +96,49 @@ services:
         condition: service_healthy
 
   propostas_sync:
-    image: alpine/git:2.49.1
+    image: composer:2.8.6
     restart: "no"
     entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
         themes=/wordpress/wp-content/themes
         plugins=/wordpress/wp-content/plugins
+        theme_current="$${themes}/e7-propostas"
+        theme_next="$${themes}/e7-propostas.next"
+        theme_previous="$${themes}/e7-propostas.previous"
+        plugin_current="$${plugins}/e7-propostas-core"
+        plugin_next="$${plugins}/e7-propostas-core.next"
+        plugin_previous="$${plugins}/e7-propostas-core.previous"
+        theme_swapped=0
+        plugin_swapped=0
+        rollback_swap() {
+          status=$$?
+          if [ "$${status}" -eq 0 ]; then return; fi
+          trap - EXIT
+          if [ "$${plugin_swapped}" -eq 1 ]; then rm -rf "$${plugin_current}"; fi
+          if [ -d "$${plugin_previous}" ]; then mv "$${plugin_previous}" "$${plugin_current}"; fi
+          if [ "$${theme_swapped}" -eq 1 ]; then rm -rf "$${theme_current}"; fi
+          if [ -d "$${theme_previous}" ]; then mv "$${theme_previous}" "$${theme_current}"; fi
+          exit "$${status}"
+        }
+        trap rollback_swap EXIT
         rm -rf /tmp/e7-propostas /tmp/e7-propostas-core "$${themes}/e7-propostas.next" "$${themes}/e7-propostas.previous" "$${plugins}/e7-propostas-core.next" "$${plugins}/e7-propostas-core.previous"
         git clone --depth 1 --branch main ${E7_PROPOSTAS_THEME_REPOSITORY:?E7_PROPOSTAS_THEME_REPOSITORY is required} /tmp/e7-propostas
         git clone --depth 1 --branch main ${E7_PROPOSTAS_PLUGIN_REPOSITORY:?E7_PROPOSTAS_PLUGIN_REPOSITORY is required} /tmp/e7-propostas-core
-        cp -a /tmp/e7-propostas "$${themes}/e7-propostas.next"
-        cp -a /tmp/e7-propostas-core "$${plugins}/e7-propostas-core.next"
-        rm -rf "$${themes}/e7-propostas.next/.git" "$${themes}/e7-propostas.next/node_modules" "$${plugins}/e7-propostas-core.next/.git" "$${plugins}/e7-propostas-core.next/vendor" "$${plugins}/e7-propostas-core.next/.phpunit.cache"
-        if [ -d "$${themes}/e7-propostas" ]; then mv "$${themes}/e7-propostas" "$${themes}/e7-propostas.previous"; fi
-        if [ -d "$${plugins}/e7-propostas-core" ]; then mv "$${plugins}/e7-propostas-core" "$${plugins}/e7-propostas-core.previous"; fi
-        mv "$${themes}/e7-propostas.next" "$${themes}/e7-propostas"
-        mv "$${plugins}/e7-propostas-core.next" "$${plugins}/e7-propostas-core"
-        rm -rf "$${themes}/e7-propostas.previous" "$${plugins}/e7-propostas-core.previous"
+        cp -a /tmp/e7-propostas "$${theme_next}"
+        cp -a /tmp/e7-propostas-core "$${plugin_next}"
+        rm -rf "$${theme_next}/.git" "$${theme_next}/node_modules" "$${plugin_next}/.git" "$${plugin_next}/vendor" "$${plugin_next}/.phpunit.cache"
+        composer install --working-dir="$${plugin_next}" --no-dev --classmap-authoritative --no-interaction --no-progress --prefer-dist
+        composer check-platform-reqs --working-dir="$${plugin_next}" --no-dev
+        php -r 'require $$argv[1] . "/vendor/autoload.php"; exit(class_exists("BaconQrCode\\Writer") ? 0 : 1);' "$${plugin_next}"
+        if [ -d "$${theme_current}" ]; then mv "$${theme_current}" "$${theme_previous}"; fi
+        if [ -d "$${plugin_current}" ]; then mv "$${plugin_current}" "$${plugin_previous}"; fi
+        mv "$${theme_next}" "$${theme_current}"
+        theme_swapped=1
+        mv "$${plugin_next}" "$${plugin_current}"
+        plugin_swapped=1
+        trap - EXIT
+        rm -rf "$${theme_previous}" "$${plugin_previous}"
     volumes:
       - wp_app:/wordpress
     depends_on:
@@ -127,7 +152,6 @@ services:
     entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
-        composer install --no-dev --classmap-authoritative --no-interaction --no-progress --prefer-dist
         composer check-platform-reqs --no-dev
         php -r 'require "vendor/autoload.php"; exit(class_exists("BaconQrCode\\Writer") ? 0 : 1);'
     volumes:

@@ -320,11 +320,15 @@ test('applies long-lived caching to GTranslate assets during the Dokploy sync', 
 
 test('prepares the proposals site, plugin worker and isolated Chromium renderer', async () => {
   const compose = await readThemeFile('docker-compose.dokploy.yml');
+  const wordpressService = compose.match(/\n  wordpress:\n[\s\S]*?(?=\n  [a-z_]+:\n)/)?.[0] ?? '';
+  const workerService = compose.match(/\n  propostas_worker:\n[\s\S]*?(?=\n  [a-z_]+:\n|\nvolumes:\n)/)?.[0] ?? '';
 
   assert.match(compose, /propostas_sync:/);
   assert.match(compose, /E7_PROPOSTAS_THEME_REPOSITORY/);
   assert.match(compose, /E7_PROPOSTAS_PLUGIN_REPOSITORY/);
-  assert.match(compose, /command:\s*\["composer", "install", "--no-dev", "--classmap-authoritative"/);
+  assert.match(compose, /composer install --no-dev --classmap-authoritative --no-interaction --no-progress --prefer-dist/);
+  assert.match(compose, /composer check-platform-reqs --no-dev/);
+  assert.match(compose, /class_exists\("BaconQrCode\\\\Writer"\)/);
   assert.match(compose, /propostas_site_setup:/);
   assert.match(compose, /site_url=https:\/\/proposal\.e7company\.com/);
   assert.match(compose, /wp plugin activate e7-propostas-core --url=/);
@@ -345,8 +349,18 @@ test('prepares the proposals site, plugin worker and isolated Chromium renderer'
   assert.match(compose, /E7_PROPOSTAS_WEB_AWS_ACCESS_KEY_ID/);
   assert.match(compose, /E7_SNS_SENDER_ID/);
   assert.match(compose, /E7_PROPOSTAS_WORKER_AWS_ACCESS_KEY_ID/);
+  assert.match(wordpressService, /E7_PROPOSTAS_OTP_ENABLED:\s*\$\{E7_PROPOSTAS_OTP_ENABLED:-0\}/);
+  assert.match(wordpressService, /E7_PROPOSTAS_FINAL_EMAIL_ENABLED:\s*\$\{E7_PROPOSTAS_FINAL_EMAIL_ENABLED:-0\}/);
+  assert.match(workerService, /E7_PROPOSTAS_OTP_ENABLED:\s*\$\{E7_PROPOSTAS_OTP_ENABLED:-0\}/);
+  assert.match(workerService, /E7_PROPOSTAS_FINAL_EMAIL_ENABLED:\s*\$\{E7_PROPOSTAS_FINAL_EMAIL_ENABLED:-0\}/);
+  assert.match(compose, /E7Propostas\\WordPress\\Installer::ensureSchema\(\)/);
+  assert.match(compose, /e7_propostas_schema_version/);
   assert.match(compose, /propostas_render:[\s\S]*internal:\s*true/);
   assert.match(compose, /propostas_renderer:[\s\S]*condition:\s*service_healthy/);
+
+  const environment = await readThemeFile('.env.example');
+  assert.match(environment, /^E7_PROPOSTAS_OTP_ENABLED=0$/m);
+  assert.match(environment, /^E7_PROPOSTAS_FINAL_EMAIL_ENABLED=0$/m);
 });
 
 test('deploys the WordPress security baseline before provisioning public sites', async () => {

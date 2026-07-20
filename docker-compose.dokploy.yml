@@ -30,6 +30,8 @@ services:
       E7_SNS_SENDER_ID: ${E7_SNS_SENDER_ID:?E7_SNS_SENDER_ID is required}
       E7_PROPOSTAS_S3_BUCKET: ${E7_PROPOSTAS_S3_BUCKET:?E7_PROPOSTAS_S3_BUCKET is required}
       E7_PROPOSTAS_KMS_SIGNING_KEY_ID: ${E7_PROPOSTAS_KMS_SIGNING_KEY_ID:?E7_PROPOSTAS_KMS_SIGNING_KEY_ID is required}
+      E7_PROPOSTAS_OTP_ENABLED: ${E7_PROPOSTAS_OTP_ENABLED:-0}
+      E7_PROPOSTAS_FINAL_EMAIL_ENABLED: ${E7_PROPOSTAS_FINAL_EMAIL_ENABLED:-0}
       E7_PROPOSTAS_EXTERNAL_WORKER: "1"
       AWS_ACCESS_KEY_ID: ${E7_PROPOSTAS_WEB_AWS_ACCESS_KEY_ID:?E7_PROPOSTAS_WEB_AWS_ACCESS_KEY_ID is required}
       AWS_SECRET_ACCESS_KEY: ${E7_PROPOSTAS_WEB_AWS_SECRET_ACCESS_KEY:?E7_PROPOSTAS_WEB_AWS_SECRET_ACCESS_KEY is required}
@@ -122,7 +124,12 @@ services:
     image: composer:2.8.6
     restart: "no"
     working_dir: /wordpress/wp-content/plugins/e7-propostas-core
-    command: ["composer", "install", "--no-dev", "--classmap-authoritative", "--no-interaction"]
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        composer install --no-dev --classmap-authoritative --no-interaction --no-progress --prefer-dist
+        composer check-platform-reqs --no-dev
+        php -r 'require "vendor/autoload.php"; exit(class_exists("BaconQrCode\\Writer") ? 0 : 1);'
     volumes:
       - wp_app:/wordpress
     depends_on:
@@ -224,6 +231,7 @@ services:
         wp theme activate e7-propostas --url="$${site_url}" --allow-root
         wp plugin activate e7-propostas-core --url="$${site_url}" --allow-root
         wp option update e7_propostas_core_enabled 1 --url="$${site_url}" --allow-root
+        wp eval 'E7Propostas\WordPress\Installer::ensureSchema(); if (get_option("e7_propostas_schema_version") !== E7Propostas\WordPress\Installer::SCHEMA_VERSION) { throw new RuntimeException("Proposal schema migration failed."); }' --url="$${site_url}" --allow-root
         wp option update blog_public 0 --url="$${site_url}" --allow-root
         wp option update home "$${site_url}" --url="$${site_url}" --allow-root
         wp option update siteurl "$${site_url}" --url="$${site_url}" --allow-root
@@ -323,6 +331,8 @@ services:
       E7_SES_FROM_EMAIL: ${E7_SES_FROM_EMAIL:?E7_SES_FROM_EMAIL is required}
       E7_PROPOSTAS_S3_BUCKET: ${E7_PROPOSTAS_S3_BUCKET:?E7_PROPOSTAS_S3_BUCKET is required}
       E7_PROPOSTAS_KMS_SIGNING_KEY_ID: ${E7_PROPOSTAS_KMS_SIGNING_KEY_ID:?E7_PROPOSTAS_KMS_SIGNING_KEY_ID is required}
+      E7_PROPOSTAS_OTP_ENABLED: ${E7_PROPOSTAS_OTP_ENABLED:-0}
+      E7_PROPOSTAS_FINAL_EMAIL_ENABLED: ${E7_PROPOSTAS_FINAL_EMAIL_ENABLED:-0}
       E7_PROPOSTAS_RENDERER_URL: http://propostas_renderer:3000/chromium/pdf?token=${E7_PROPOSTAS_RENDERER_TOKEN:?E7_PROPOSTAS_RENDERER_TOKEN is required}
       E7_PROPOSTAS_RETENTION_YEARS: ${E7_PROPOSTAS_RETENTION_YEARS:-7}
       AWS_ACCESS_KEY_ID: ${E7_PROPOSTAS_WORKER_AWS_ACCESS_KEY_ID:?E7_PROPOSTAS_WORKER_AWS_ACCESS_KEY_ID is required}

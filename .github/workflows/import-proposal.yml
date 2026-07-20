@@ -1,0 +1,109 @@
+name: Importar proposta privada
+
+on:
+  workflow_dispatch:
+    inputs:
+      share_code:
+        description: Código privado de oito caracteres que deve responder após a importação
+        required: true
+        type: string
+      confirmation:
+        description: Digite IMPORTAR para confirmar
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e7-company-production
+  cancel-in-progress: false
+
+jobs:
+  import:
+    name: Importar no subsite de propostas
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Importar e restaurar o ambiente
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_KEY: ${{ secrets.DOKPLOY_KEY }}
+          DOKPLOY_COMPOSE_ID: ${{ secrets.DOKPLOY_COMPOSE_ID }}
+          E7_PROPOSALS_IMPORT_B64: ${{ secrets.E7_PROPOSALS_IMPORT_B64 }}
+          E7_SHARE_CODE: ${{ inputs.share_code }}
+          E7_CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          test "$E7_CONFIRMATION" = "IMPORTAR"
+          test -n "$DOKPLOY_URL"
+          test -n "$DOKPLOY_KEY"
+          test -n "$DOKPLOY_COMPOSE_ID"
+          test -n "$E7_PROPOSALS_IMPORT_B64"
+          printf '%s' "$E7_SHARE_CODE" | grep -Eq '^[a-hj-km-np-z2-9]{8}$'
+
+          compose_state="$(curl --fail-with-body --silent --show-error \
+            --header "x-api-key: $DOKPLOY_KEY" \
+            "$DOKPLOY_URL/api/compose.one?composeId=$DOKPLOY_COMPOSE_ID")"
+          original_environment="$(printf '%s' "$compose_state" | jq -er '.env // ""')"
+          clean_environment="$(printf '%s\n' "$original_environment" | awk '!/^E7_PROPOSALS_IMPORT_B64=/')"
+          temporary_environment="${clean_environment}"$'\n'"E7_PROPOSALS_IMPORT_B64=${E7_PROPOSALS_IMPORT_B64}"
+
+          restore_environment() {
+            operation_status=$?
+            trap - EXIT
+            set +e
+            jq --null-input \
+              --arg composeId "$DOKPLOY_COMPOSE_ID" \
+              --arg env "$original_environment" \
+              '{composeId: $composeId, env: $env}' \
+              | curl --fail-with-body --silent --show-error \
+                  --request POST \
+                  --header "Content-Type: application/json" \
+                  --header "x-api-key: $DOKPLOY_KEY" \
+                  --data-binary @- \
+                  "$DOKPLOY_URL/api/compose.saveEnvironment"
+            restore_status=$?
+            if [ "$restore_status" -eq 0 ]; then
+              curl --fail-with-body --silent --show-error \
+                --request POST \
+                --header "Content-Type: application/json" \
+                --header "x-api-key: $DOKPLOY_KEY" \
+                --data "{\"composeId\":\"$DOKPLOY_COMPOSE_ID\",\"title\":\"Restore proposal import environment\"}" \
+                "$DOKPLOY_URL/api/compose.deploy"
+              restore_status=$?
+            fi
+            if [ "$operation_status" -ne 0 ]; then exit "$operation_status"; fi
+            exit "$restore_status"
+          }
+          trap restore_environment EXIT
+
+          jq --null-input \
+            --arg composeId "$DOKPLOY_COMPOSE_ID" \
+            --arg env "$temporary_environment" \
+            '{composeId: $composeId, env: $env}' \
+            | curl --fail-with-body --silent --show-error \
+                --request POST \
+                --header "Content-Type: application/json" \
+                --header "x-api-key: $DOKPLOY_KEY" \
+                --data-binary @- \
+                "$DOKPLOY_URL/api/compose.saveEnvironment"
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --header "x-api-key: $DOKPLOY_KEY" \
+            --data "{\"composeId\":\"$DOKPLOY_COMPOSE_ID\",\"title\":\"Import private proposal\"}" \
+            "$DOKPLOY_URL/api/compose.deploy"
+
+          imported=0
+          for attempt in $(seq 1 60); do
+            : "$attempt"
+            response="$(curl --silent --show-error --connect-timeout 10 --max-time 20 \
+              "https://proposal.e7company.com/p/$E7_SHARE_CODE/" || true)"
+            if printf '%s' "$response" | grep -q 'data-e7-password-form'; then
+              imported=1
+              break
+            fi
+            sleep 5
+          done
+          test "$imported" -eq 1

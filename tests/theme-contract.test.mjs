@@ -330,6 +330,21 @@ test('synchronizes the versioned Compose before triggering the Dokploy deploymen
   assert.ok(deployPosition > updatePosition, 'The synchronized Compose must be deployed only after the update succeeds');
 });
 
+test('imports a private proposal through a production-only manual workflow', async () => {
+  const workflow = await readThemeFile('.github/workflows/import-proposal.yml');
+
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /environment:\s*production/);
+  assert.match(workflow, /secrets\.E7_PROPOSALS_IMPORT_B64/);
+  assert.match(workflow, /api\/compose\.one/);
+  assert.match(workflow, /api\/compose\.saveEnvironment/);
+  assert.match(workflow, /api\/compose\.deploy/);
+  assert.match(workflow, /trap restore_environment EXIT/);
+  assert.match(workflow, /E7_PROPOSALS_IMPORT_B64=/);
+  assert.match(workflow, /data-e7-password-form/);
+  assert.doesNotMatch(workflow, /Ross-E7-2026|Damien Ross|Ross Motorcycles/);
+});
+
 test('prepares the proposals site, plugin worker and isolated Chromium renderer', async () => {
   const compose = await readThemeFile('docker-compose.dokploy.yml');
   const wordpressService = compose.match(/\n  wordpress:\n[\s\S]*?(?=\n  [a-z_]+:\n)/)?.[0] ?? '';

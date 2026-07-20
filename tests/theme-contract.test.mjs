@@ -427,6 +427,7 @@ test('deploys the WordPress security baseline before provisioning public sites',
   assert.match(compose, /> "\$\$\{result_file\}" 2>&1/);
   assert.match(compose, /base64 -d > "\$\$\{import_file\}"/);
   assert.match(compose, /wp --url=proposal\.e7company\.com eval-file .*deploy\/import-proposals\.php/);
+  assert.match(compose, /trap 'rm -f "\$\$\{import_file\}"' EXIT/);
   assert.match(compose, /cleanup-misrouted-proposals\.php/);
 });
 

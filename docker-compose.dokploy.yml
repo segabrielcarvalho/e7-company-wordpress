@@ -317,6 +317,7 @@ services:
         if [ -n "$${E7_PROPOSALS_IMPORT_RESULT_TOKEN}" ]; then
           printf '%s' "$${E7_PROPOSALS_IMPORT_RESULT_TOKEN}" | grep -Eq '^[a-f0-9]{64}$'
           result_file="/var/www/html/wp-content/uploads/e7-import-result-$${E7_PROPOSALS_IMPORT_RESULT_TOKEN}.txt"
+          printf 'Proposal import run: %s\n' "$${E7_PROPOSALS_IMPORT_RESULT_TOKEN}"
         fi
         if [ -n "$${E7_PROPOSALS_IMPORT_B64}" ]; then
           umask 077
@@ -333,6 +334,8 @@ services:
           import_status=$$?
           set -e
           chmod 0644 "$${result_file}"
+          cat "$${result_file}"
+          rm -f "$${result_file}"
           if [ "$${import_status}" -ne 0 ]; then exit "$${import_status}"; fi
         else
           wp --url=proposal.e7company.com eval-file /var/www/html/wp-content/plugins/e7-propostas-core/deploy/import-proposals.php --allow-root

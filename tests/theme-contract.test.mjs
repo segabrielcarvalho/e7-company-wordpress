@@ -343,9 +343,12 @@ test('imports a private proposal through a production-only manual workflow', asy
   assert.match(workflow, /trap restore_environment EXIT/);
   assert.match(workflow, /E7_PROPOSALS_IMPORT_B64=/);
   assert.match(workflow, /E7_PROPOSALS_IMPORT_PASSWORD=/);
+  assert.match(workflow, /openssl rand -hex 32/);
+  assert.match(workflow, /E7_PROPOSALS_IMPORT_RESULT_TOKEN=/);
   assert.match(workflow, /data-e7-password-form/);
   assert.match(workflow, /api\/compose\.readLogs/);
   assert.match(workflow, /propostas_import-1/);
+  assert.match(workflow, /Success: 1 proposal\(s\) imported\./);
   assert.doesNotMatch(workflow, /Ross-E7-2026|Damien Ross|Ross Motorcycles/);
 });
 
@@ -426,6 +429,9 @@ test('deploys the WordPress security baseline before provisioning public sites',
   assert.match(compose, /E7_PROPOSALS_IMPORT_B64/);
   assert.match(compose, /E7_PROPOSALS_IMPORT_RESULT_TOKEN/);
   assert.match(compose, /e7-import-result-\$\$\{E7_PROPOSALS_IMPORT_RESULT_TOKEN\}\.txt/);
+  assert.match(compose, /Proposal import run:/);
+  assert.match(compose, /cat "\$\$\{result_file\}"/);
+  assert.match(compose, /rm -f "\$\$\{result_file\}"/);
   assert.match(compose, /> "\$\$\{result_file\}" 2>&1/);
   assert.match(compose, /base64 -d > "\$\$\{import_file\}"/);
   assert.match(compose, /wp --url=proposal\.e7company\.com eval-file .*deploy\/import-proposals\.php/);

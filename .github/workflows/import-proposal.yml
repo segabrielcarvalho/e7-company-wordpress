@@ -50,8 +50,9 @@ jobs:
             "$DOKPLOY_URL/api/compose.one?composeId=$DOKPLOY_COMPOSE_ID")"
           compose_app_name="$(printf '%s' "$compose_state" | jq -er '.appName')"
           original_environment="$(printf '%s' "$compose_state" | jq -er '.env // ""')"
-          clean_environment="$(printf '%s\n' "$original_environment" | awk '!/^E7_PROPOSALS_IMPORT_(B64|PASSWORD)=/')"
-          temporary_environment="${clean_environment}"$'\n'"E7_PROPOSALS_IMPORT_B64=${E7_PROPOSALS_IMPORT_B64}"$'\n'"E7_PROPOSALS_IMPORT_PASSWORD=${E7_PROPOSALS_IMPORT_PASSWORD}"
+          import_result_token="$(openssl rand -hex 32)"
+          clean_environment="$(printf '%s\n' "$original_environment" | awk '!/^E7_PROPOSALS_IMPORT_(B64|PASSWORD|RESULT_TOKEN)=/')"
+          temporary_environment="${clean_environment}"$'\n'"E7_PROPOSALS_IMPORT_B64=${E7_PROPOSALS_IMPORT_B64}"$'\n'"E7_PROPOSALS_IMPORT_PASSWORD=${E7_PROPOSALS_IMPORT_PASSWORD}"$'\n'"E7_PROPOSALS_IMPORT_RESULT_TOKEN=${import_result_token}"
 
           restore_environment() {
             operation_status=$?
@@ -99,26 +100,30 @@ jobs:
             --data "{\"composeId\":\"$DOKPLOY_COMPOSE_ID\",\"title\":\"Import private proposal\"}" \
             "$DOKPLOY_URL/api/compose.deploy"
 
+          container_id="${compose_app_name}-propostas_import-1"
           imported=0
-          for attempt in $(seq 1 60); do
+          import_logs=''
+          for attempt in $(seq 1 120); do
             : "$attempt"
-            response="$(curl --silent --show-error --connect-timeout 10 --max-time 20 \
-              "https://proposal.e7company.com/p/$E7_SHARE_CODE/" || true)"
-            if printf '%s' "$response" | grep -q 'data-e7-password-form'; then
+            import_logs="$(curl --silent --show-error --get \
+              --header "x-api-key: $DOKPLOY_KEY" \
+              --data-urlencode "composeId=$DOKPLOY_COMPOSE_ID" \
+              --data-urlencode "containerId=$container_id" \
+              --data-urlencode "tail=200" \
+              "$DOKPLOY_URL/api/compose.readLogs" 2>/dev/null | jq -r '.' 2>/dev/null || true)"
+            if printf '%s' "$import_logs" | grep -Fq "$import_result_token" \
+              && printf '%s' "$import_logs" | grep -Fq 'Success: 1 proposal(s) imported.'; then
               imported=1
               break
             fi
             sleep 5
           done
           if [ "$imported" -ne 1 ]; then
-            container_id="${compose_app_name}-propostas_import-1"
-            echo "A proposta não respondeu; log do container de importação:"
-            curl --fail-with-body --silent --show-error --get \
-              --header "x-api-key: $DOKPLOY_KEY" \
-              --data-urlencode "composeId=$DOKPLOY_COMPOSE_ID" \
-              --data-urlencode "containerId=$container_id" \
-              --data-urlencode "tail=200" \
-              "$DOKPLOY_URL/api/compose.readLogs" \
-              | jq -r '.'
+            echo "A importação não foi confirmada; último log do container:"
+            printf '%s\n' "$import_logs"
             exit 1
           fi
+
+          response="$(curl --silent --show-error --connect-timeout 10 --max-time 20 \
+            "https://proposal.e7company.com/p/$E7_SHARE_CODE/" || true)"
+          printf '%s' "$response" | grep -q 'data-e7-password-form'

@@ -341,12 +341,14 @@ test('prepares the proposals site, plugin worker and isolated Chromium renderer'
   assert.match(compose, /propostas_site_setup:/);
   assert.match(compose, /site_url=https:\/\/proposal\.e7company\.com/);
   assert.match(compose, /wp plugin activate e7-propostas-core --url=/);
+  assert.match(compose, /propostas_site_setup:[\s\S]*extension_loaded\("sodium"\)/);
   assert.match(compose, /wp option update e7_propostas_core_enabled 1/);
   assert.match(compose, /wp theme activate e7-propostas/);
   assert.match(compose, /slug=privacy/);
   assert.match(compose, /slug=electronic-acceptance/);
   assert.match(compose, /slug=validation/);
   assert.match(compose, /propostas_worker:/);
+  assert.match(workerService, /extension_loaded\("sodium"\)/);
   assert.match(compose, /wp e7-propostas jobs run/);
   assert.match(compose, /propostas_renderer:/);
   assert.match(compose, /ghcr\.io\/browserless\/chromium@sha256:[a-f0-9]{64}/);

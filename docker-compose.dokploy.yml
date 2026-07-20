@@ -246,6 +246,7 @@ services:
     entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
+        php -r 'exit(extension_loaded("sodium") ? 0 : 1);'
         site_url=https://proposal.e7company.com
         admin_email="$$(wp option get admin_email --url=https://e7company.com --allow-root)"
         if ! wp site list --field=url --allow-root | grep -Fx "$${site_url}/" >/dev/null; then
@@ -373,6 +374,7 @@ services:
     entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
+        php -r 'exit(extension_loaded("sodium") ? 0 : 1);'
         while true; do
           wp e7-propostas jobs run --url=https://proposal.e7company.com --allow-root
           sleep 60

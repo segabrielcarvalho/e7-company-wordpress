@@ -45,6 +45,7 @@ jobs:
           compose_state="$(curl --fail-with-body --silent --show-error \
             --header "x-api-key: $DOKPLOY_KEY" \
             "$DOKPLOY_URL/api/compose.one?composeId=$DOKPLOY_COMPOSE_ID")"
+          compose_app_name="$(printf '%s' "$compose_state" | jq -er '.appName')"
           original_environment="$(printf '%s' "$compose_state" | jq -er '.env // ""')"
           clean_environment="$(printf '%s\n' "$original_environment" | awk '!/^E7_PROPOSALS_IMPORT_B64=/')"
           temporary_environment="${clean_environment}"$'\n'"E7_PROPOSALS_IMPORT_B64=${E7_PROPOSALS_IMPORT_B64}"
@@ -106,4 +107,15 @@ jobs:
             fi
             sleep 5
           done
-          test "$imported" -eq 1
+          if [ "$imported" -ne 1 ]; then
+            container_id="${compose_app_name}-propostas_import-1"
+            echo "A proposta não respondeu; log do container de importação:"
+            curl --fail-with-body --silent --show-error --get \
+              --header "x-api-key: $DOKPLOY_KEY" \
+              --data-urlencode "composeId=$DOKPLOY_COMPOSE_ID" \
+              --data-urlencode "containerId=$container_id" \
+              --data-urlencode "tail=200" \
+              "$DOKPLOY_URL/api/compose.readLogs" \
+              | jq -r '.'
+            exit 1
+          fi

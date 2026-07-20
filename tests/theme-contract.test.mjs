@@ -342,6 +342,8 @@ test('imports a private proposal through a production-only manual workflow', asy
   assert.match(workflow, /trap restore_environment EXIT/);
   assert.match(workflow, /E7_PROPOSALS_IMPORT_B64=/);
   assert.match(workflow, /data-e7-password-form/);
+  assert.match(workflow, /api\/compose\.readLogs/);
+  assert.match(workflow, /propostas_import-1/);
   assert.doesNotMatch(workflow, /Ross-E7-2026|Damien Ross|Ross Motorcycles/);
 });
 

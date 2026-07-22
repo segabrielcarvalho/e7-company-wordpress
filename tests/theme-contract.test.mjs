@@ -442,7 +442,7 @@ test('deploys the WordPress security baseline before provisioning public sites',
 test('provisions the Ross Motorcycles multisite clone idempotently', async () => {
   const compose = await readThemeFile('docker-compose.dokploy.yml');
 
-  assert.equal((compose.match(/WORDPRESS_CONFIG_EXTRA/g) ?? []).length, 6);
+  assert.equal((compose.match(/WORDPRESS_CONFIG_EXTRA/g) ?? []).length, 7);
   assert.match(compose, /github\.com\/segabrielcarvalho\/ross-motorcycles-cork\.git/);
   assert.match(compose, /ross-motorcycles\.e7company\.com/);
   assert.match(compose, /wp site create/);
@@ -450,6 +450,26 @@ test('provisions the Ross Motorcycles multisite clone idempotently', async () =>
   assert.match(compose, /wp theme activate ross-motorcycles-cork/);
   assert.match(compose, /wp ross catalogue import --prune/);
   assert.match(compose, /condition: service_completed_successfully/);
+});
+
+test('provisions the Auto Point Motor Group multisite clone with its complete catalogue', async () => {
+  const compose = await readThemeFile('docker-compose.dokploy.yml');
+  const stylesheet = await readThemeFile('sites/auto-point-motor-group/style.css');
+
+  assert.match(stylesheet, /Theme Name:\s*Auto Point Motor Group/);
+  assert.match(compose, /cp -a \/tmp\/e7-company\/sites\/auto-point-motor-group/);
+  assert.match(compose, /auto-point\.e7company\.com/);
+  assert.match(compose, /wp theme enable auto-point-motor-group --network/);
+  assert.match(compose, /wp theme activate auto-point-motor-group/);
+  assert.match(compose, /wp plugin install woocommerce --version=10\.9\.4 --activate/);
+  assert.match(compose, /wp plugin install revolut-gateway-for-woocommerce --version=4\.22\.6 --activate/);
+  assert.match(compose, /wp apmg import-vehicles .*--download-images/);
+  assert.match(compose, /wp apmg commerce sync/);
+  assert.match(compose, /wp post list --post_type=vehicle .*--format=count/);
+  assert.match(compose, /test "\$\$\{vehicle_count\}" -eq 50/);
+  assert.match(compose, /wp post list --post_type=product .*--format=count/);
+  assert.match(compose, /test "\$\$\{product_count\}" -eq 50/);
+  assert.match(compose, /wp rewrite flush .*auto-point\.e7company\.com/);
 });
 
 test('serves right-sized industry images with explicit dimensions', async () => {
